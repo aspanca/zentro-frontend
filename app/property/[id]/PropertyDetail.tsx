@@ -4,7 +4,8 @@ import { useEffect, useState } from 'react';
 import dynamic from 'next/dynamic';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
-import { usePropertyStore, useAuthStore, usePaymentStore } from '@/lib/store';
+import { usePropertyStore, usePaymentStore } from '@/lib/store';
+import { api } from '@/lib/api';
 import { Property } from '@/types';
 import { formatPrice, formatPricePerSqm, propertyTypeLabel, propertyTypeColor, timeAgo } from '@/lib/utils';
 import InsightsPaywall from '@/components/InsightsPaywall';
@@ -17,7 +18,6 @@ interface Props {
 
 export default function PropertyDetail({ id }: Props) {
   const { properties } = usePropertyStore();
-  const { users } = useAuthStore();
   const { isUnlocked } = usePaymentStore();
   const router = useRouter();
   const [property, setProperty] = useState<Property | null>(null);
@@ -26,13 +26,20 @@ export default function PropertyDetail({ id }: Props) {
   const [unlocked, setUnlocked] = useState(false);
 
   useEffect(() => {
-    const found = properties.find((p) => p.id === id);
-    if (found) {
-      setProperty(found);
+    // First try the local store (instant), then fall back to the API
+    const local = properties.find((p) => p.id === id);
+    if (local) {
+      setProperty(local);
       setUnlocked(isUnlocked(id));
-    } else {
-      setNotFound(true);
+      return;
     }
+
+    api.get(`/api/properties/${id}`)
+      .then((data) => {
+        setProperty(data as Property);
+        setUnlocked(isUnlocked(id));
+      })
+      .catch(() => setNotFound(true));
   }, [id, properties, isUnlocked]);
 
   if (notFound) {
@@ -62,7 +69,8 @@ export default function PropertyDetail({ id }: Props) {
     );
   }
 
-  const owner = users.find((u) => u.id === property.userId);
+  // owner info comes embedded from the API response as `owner`
+  const owner = (property as Property & { owner?: { id: string; name: string; email: string } }).owner ?? null;
 
   return (
     <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
@@ -181,13 +189,11 @@ export default function PropertyDetail({ id }: Props) {
                 <p className="text-xs font-medium text-gray-500 mb-3">Shitësi</p>
                 <div className="flex items-center gap-3">
                   <div className="w-10 h-10 rounded-full bg-rose-100 flex items-center justify-center text-rose-600 font-semibold">
-                    {owner.fullName.charAt(0).toUpperCase()}
+                    {owner.name?.charAt(0).toUpperCase()}
                   </div>
                   <div>
-                    <p className="text-sm font-semibold text-gray-900">{owner.fullName}</p>
-                    {owner.companyName && (
-                      <p className="text-xs text-gray-500">{owner.companyName}</p>
-                    )}
+                    <p className="text-sm font-semibold text-gray-900">{owner.name}</p>
+                    <p className="text-xs text-gray-500">{owner.email}</p>
                   </div>
                 </div>
               </div>
