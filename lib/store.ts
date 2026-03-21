@@ -11,8 +11,9 @@ interface AuthState {
   currentUser: User | null;
   accessToken: string | null;
   refreshToken: string | null;
-  login: (email: string, password: string) => Promise<{ ok: boolean; error?: string }>;
-  register: (name: string, email: string, password: string) => Promise<{ ok: boolean; error?: string }>;
+  login: (email: string, password: string) => Promise<{ ok: boolean; error?: string; unverified?: boolean }>;
+  register: (name: string, email: string, password: string) => Promise<{ ok: boolean; error?: string; email?: string }>;
+  verify: (email: string, code: string) => Promise<{ ok: boolean; error?: string }>;
   logout: () => Promise<void>;
   refreshAccessToken: () => Promise<boolean>;
 }
@@ -47,17 +48,28 @@ export const useAuthStore = create<AuthState>()(
           set({ currentUser: data.user, accessToken: data.accessToken, refreshToken: data.refreshToken });
           return { ok: true };
         } catch (err: unknown) {
-          return { ok: false, error: err instanceof Error ? err.message : 'Login failed' };
+          const msg = err instanceof Error ? err.message : 'Login failed';
+          const unverified = msg.includes('verify your email');
+          return { ok: false, error: msg, unverified };
         }
       },
 
       register: async (name, email, password) => {
         try {
           const data = await api.post('/api/auth/register', { name, email, password });
+          return { ok: true, email: data.email };
+        } catch (err: unknown) {
+          return { ok: false, error: err instanceof Error ? err.message : 'Registration failed' };
+        }
+      },
+
+      verify: async (email, code) => {
+        try {
+          const data = await api.post('/api/auth/verify', { email, code });
           set({ currentUser: data.user, accessToken: data.accessToken, refreshToken: data.refreshToken });
           return { ok: true };
         } catch (err: unknown) {
-          return { ok: false, error: err instanceof Error ? err.message : 'Registration failed' };
+          return { ok: false, error: err instanceof Error ? err.message : 'Verification failed' };
         }
       },
 

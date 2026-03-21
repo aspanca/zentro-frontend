@@ -22,6 +22,8 @@ export default function LoginPage() {
     setLoading(false);
     if (result.ok) {
       router.push('/');
+    } else if (result.unverified) {
+      router.push(`/auth/verify?email=${encodeURIComponent(email)}`);
     } else {
       setError(result.error ?? 'Login failed.');
     }

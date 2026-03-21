@@ -22,7 +22,7 @@ export default function RegisterPage() {
     const result = await register(name, email, password);
     setLoading(false);
     if (result.ok) {
-      router.push('/');
+      router.push(`/auth/verify?email=${encodeURIComponent(result.email ?? email)}`);
     } else {
       setError(result.error ?? 'Registration failed.');
     }
