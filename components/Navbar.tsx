@@ -37,9 +37,14 @@ export default function Navbar() {
               Kryefaqja
             </Link>
             {currentUser && (
-              <Link href="/create-listing" className="text-gray-600 hover:text-gray-900 text-sm font-medium transition-colors">
-                Shto Pronë
-              </Link>
+              <>
+                <Link href="/my-properties" className="text-gray-600 hover:text-gray-900 text-sm font-medium transition-colors">
+                  Pronat e mia
+                </Link>
+                <Link href="/create-listing" className="text-gray-600 hover:text-gray-900 text-sm font-medium transition-colors">
+                  Shto Pronë
+                </Link>
+              </>
             )}
             {/* Credits badge */}
             {credits > 0 && (
@@ -111,13 +116,22 @@ export default function Navbar() {
             Kryefaqja
           </Link>
           {currentUser && (
-            <Link
-              href="/create-listing"
-              className="block text-gray-700 font-medium py-2"
-              onClick={() => setMenuOpen(false)}
-            >
-              Shto Pronë
-            </Link>
+            <>
+              <Link
+                href="/my-properties"
+                className="block text-gray-700 font-medium py-2"
+                onClick={() => setMenuOpen(false)}
+              >
+                Pronat e mia
+              </Link>
+              <Link
+                href="/create-listing"
+                className="block text-gray-700 font-medium py-2"
+                onClick={() => setMenuOpen(false)}
+              >
+                Shto Pronë
+              </Link>
+            </>
           )}
           {currentUser ? (
             <>

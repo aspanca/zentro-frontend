@@ -46,6 +46,9 @@ async function request(path: string, options: RequestInit = {}, retry = true): P
 }
 
 export const api = {
+  get: (path: string, headers?: Record<string, string>) =>
+    request(path, { method: 'GET', headers }),
+
   post: (path: string, body: unknown, headers?: Record<string, string>) =>
     request(path, {
       method: 'POST',
@@ -53,6 +56,13 @@ export const api = {
       headers,
     }),
 
-  get: (path: string, headers?: Record<string, string>) =>
-    request(path, { method: 'GET', headers }),
+  put: (path: string, body: unknown, headers?: Record<string, string>) =>
+    request(path, {
+      method: 'PUT',
+      body: JSON.stringify(body),
+      headers,
+    }),
+
+  delete: (path: string, headers?: Record<string, string>) =>
+    request(path, { method: 'DELETE', headers }),
 };
