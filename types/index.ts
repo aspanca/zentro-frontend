@@ -60,10 +60,8 @@ export interface Property {
 
 export interface User {
   id: string;
-  fullName: string;
-  companyName?: string;
+  name: string;
   email: string;
-  password: string;
 }
 
 export interface FilterState {

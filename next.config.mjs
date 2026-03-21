@@ -14,15 +14,10 @@ const nextConfig = {
     // avoiding mixed-content errors (HTTPS frontend → HTTP backend).
     // In dev, NEXT_PUBLIC_API_URL is used directly (see .env.local).
     if (process.env.NODE_ENV !== 'production') return [];
+    const BACKEND = 'http://165.22.70.65:4000';
     return [
-      {
-        source: '/api/:path*',
-        destination: 'http://165.22.70.65:4000/api/:path*',
-      },
-      {
-        source: '/health',
-        destination: 'http://165.22.70.65:4000/health',
-      },
+      { source: '/api/:path*', destination: `${BACKEND}/api/:path*` },
+      { source: '/health',     destination: `${BACKEND}/health` },
     ];
   },
 };

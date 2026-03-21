@@ -3,16 +3,18 @@
 import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
 import { FilterState, Property, PropertyType, User } from '@/types';
-import { mockProperties, mockUsers } from './mockData';
+import { mockProperties } from './mockData';
 import { generateMockNearby, generateMockProfile } from './insights';
+import { api } from './api';
 
 interface AuthState {
   currentUser: User | null;
-  users: User[];
-  login: (email: string, password: string) => boolean;
-  register: (fullName: string, email: string, password: string, companyName?: string) => boolean;
-  logout: () => void;
-  updateProfile: (data: Partial<Omit<User, 'id' | 'password'>>) => void;
+  accessToken: string | null;
+  refreshToken: string | null;
+  login: (email: string, password: string) => Promise<{ ok: boolean; error?: string }>;
+  register: (name: string, email: string, password: string) => Promise<{ ok: boolean; error?: string }>;
+  logout: () => Promise<void>;
+  refreshAccessToken: () => Promise<boolean>;
 }
 
 interface PropertyState {
@@ -36,45 +38,48 @@ export const useAuthStore = create<AuthState>()(
   persist(
     (set, get) => ({
       currentUser: null,
-      users: mockUsers,
-      login: (email, password) => {
-        const user = get().users.find(
-          (u) => u.email === email && u.password === password
-        );
-        if (user) {
-          set({ currentUser: user });
-          return true;
+      accessToken: null,
+      refreshToken: null,
+
+      login: async (email, password) => {
+        try {
+          const data = await api.post('/api/auth/login', { email, password });
+          set({ currentUser: data.user, accessToken: data.accessToken, refreshToken: data.refreshToken });
+          return { ok: true };
+        } catch (err: unknown) {
+          return { ok: false, error: err instanceof Error ? err.message : 'Login failed' };
         }
-        return false;
       },
-      register: (fullName, email, password, companyName) => {
-        const existing = get().users.find((u) => u.email === email);
-        if (existing) return false;
-        const newUser: User = {
-          id: `user-${Date.now()}`,
-          fullName,
-          email,
-          password,
-          companyName,
-        };
-        set((state) => ({
-          users: [...state.users, newUser],
-          currentUser: newUser,
-        }));
-        return true;
+
+      register: async (name, email, password) => {
+        try {
+          const data = await api.post('/api/auth/register', { name, email, password });
+          set({ currentUser: data.user, accessToken: data.accessToken, refreshToken: data.refreshToken });
+          return { ok: true };
+        } catch (err: unknown) {
+          return { ok: false, error: err instanceof Error ? err.message : 'Registration failed' };
+        }
       },
-      logout: () => set({ currentUser: null }),
-      updateProfile: (data) => {
-        set((state) => {
-          if (!state.currentUser) return state;
-          const updated = { ...state.currentUser, ...data };
-          return {
-            currentUser: updated,
-            users: state.users.map((u) =>
-              u.id === updated.id ? updated : u
-            ),
-          };
-        });
+
+      logout: async () => {
+        const { refreshToken } = get();
+        if (refreshToken) {
+          await api.post('/api/auth/logout', { refreshToken }).catch(() => {});
+        }
+        set({ currentUser: null, accessToken: null, refreshToken: null });
+      },
+
+      refreshAccessToken: async () => {
+        const { refreshToken } = get();
+        if (!refreshToken) return false;
+        try {
+          const data = await api.post('/api/auth/refresh', { refreshToken });
+          set({ accessToken: data.accessToken, refreshToken: data.refreshToken });
+          return true;
+        } catch {
+          set({ currentUser: null, accessToken: null, refreshToken: null });
+          return false;
+        }
       },
     }),
     { name: 'kosova-prona-auth' }
