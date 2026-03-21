@@ -19,11 +19,12 @@ interface Props { property: Property }
 export default function PropertyCard({ property }: Props) {
   const {
     id, title, neighborhood, city, totalPrice, pricePerSqm, size,
-    images, listingType, category, bedrooms, bathrooms, extras = [],
-    hasBalcony,
+    images, listingType, category, bedrooms, bathrooms,
+    extras: rawExtras, hasBalcony,
   } = property;
 
-  const mainImage = images?.[0] ?? null;
+  const extras = rawExtras ?? [];
+  const mainImage = (images ?? [])[0] ?? null;
   const badge = listingType === 'rent' ? 'Qira' : 'Shitje';
   const badgeColor = listingType === 'rent' ? 'bg-blue-500' : 'bg-rose-500';
 

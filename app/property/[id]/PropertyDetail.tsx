@@ -149,12 +149,16 @@ export default function PropertyDetail({ id }: Props) {
 
   const owner = (property as Property & { owner?: { id: string; name: string; email: string } }).owner ?? null;
   const isOwner = currentUser?.id === property.userId;
+  const images = property.images ?? [];
+  const extras = property.extras ?? [];
+  const furnishing = property.furnishing ?? [];
+  const heating = property.heating ?? [];
 
   return (
     <>
       {lightboxOpen && (
         <Lightbox
-          images={property.images}
+          images={images}
           startIdx={activeImage}
           onClose={() => setLightboxOpen(false)}
         />
@@ -179,7 +183,7 @@ export default function PropertyDetail({ id }: Props) {
               onClick={() => setLightboxOpen(true)}
             >
               <img
-                src={property.images[activeImage] || 'https://images.unsplash.com/photo-1560448204-e02f11c3d0e2?w=800&q=80'}
+                src={images[activeImage] || 'https://images.unsplash.com/photo-1560448204-e02f11c3d0e2?w=800&q=80'}
                 alt={property.title}
                 className="w-full h-full object-cover transition-transform group-hover:scale-[1.02] duration-300"
               />
@@ -196,17 +200,17 @@ export default function PropertyDetail({ id }: Props) {
                 Zgjero
               </div>
               {/* Image counter */}
-              {property.images.length > 1 && (
+              {images.length > 1 && (
                 <div className="absolute top-4 right-4 bg-black/50 text-white text-xs font-medium px-2.5 py-1 rounded-full">
-                  {activeImage + 1} / {property.images.length}
+                  {activeImage + 1} / {images.length}
                 </div>
               )}
             </div>
 
             {/* Thumbnails */}
-            {property.images.length > 1 && (
+            {images.length > 1 && (
               <div className="flex gap-2 mb-6 overflow-x-auto pb-1">
-                {property.images.map((img, idx) => (
+                {images.map((img, idx) => (
                   <button
                     key={idx}
                     onClick={() => setActiveImage(idx)}
