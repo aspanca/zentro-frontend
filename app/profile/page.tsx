@@ -8,15 +8,16 @@ import PropertyCard from '@/components/PropertyCard';
 import { formatPrice } from '@/lib/utils';
 
 export default function ProfilePage() {
-  const { currentUser, logout } = useAuthStore();
+  const { currentUser, logout, _hasHydrated } = useAuthStore();
   const { properties } = usePropertyStore();
   const router = useRouter();
 
   useEffect(() => {
+    if (!_hasHydrated) return;
     if (!currentUser) router.push('/auth/login');
-  }, [currentUser, router]);
+  }, [currentUser, _hasHydrated, router]);
 
-  if (!currentUser) return null;
+  if (!_hasHydrated || !currentUser) return null;
 
   const myProperties = properties.filter((p) => p.userId === currentUser.id);
 

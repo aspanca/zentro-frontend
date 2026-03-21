@@ -11,6 +11,8 @@ interface AuthState {
   currentUser: User | null;
   accessToken: string | null;
   refreshToken: string | null;
+  _hasHydrated: boolean;
+  setHasHydrated: (val: boolean) => void;
   login: (email: string, password: string) => Promise<{ ok: boolean; error?: string; unverified?: boolean }>;
   register: (name: string, email: string, password: string) => Promise<{ ok: boolean; error?: string; email?: string }>;
   verify: (email: string, code: string) => Promise<{ ok: boolean; error?: string }>;
@@ -41,6 +43,8 @@ export const useAuthStore = create<AuthState>()(
       currentUser: null,
       accessToken: null,
       refreshToken: null,
+      _hasHydrated: false,
+      setHasHydrated: (val) => set({ _hasHydrated: val }),
 
       login: async (email, password) => {
         try {
@@ -94,7 +98,12 @@ export const useAuthStore = create<AuthState>()(
         }
       },
     }),
-    { name: 'kosova-prona-auth' }
+    {
+      name: 'kosova-prona-auth',
+      onRehydrateStorage: () => (state) => {
+        state?.setHasHydrated(true);
+      },
+    }
   )
 );
 

@@ -16,7 +16,7 @@ const MOCK_IMAGES = [
 ];
 
 export default function CreateListingPage() {
-  const { currentUser } = useAuthStore();
+  const { currentUser, _hasHydrated } = useAuthStore();
   const { addProperty } = usePropertyStore();
   const router = useRouter();
 
@@ -35,12 +35,11 @@ export default function CreateListingPage() {
   const totalPrice = size && pricePerSqm ? Number(size) * Number(pricePerSqm) : 0;
 
   useEffect(() => {
-    if (!currentUser) {
-      router.push('/auth/login');
-    }
-  }, [currentUser, router]);
+    if (!_hasHydrated) return;
+    if (!currentUser) router.push('/auth/login');
+  }, [currentUser, _hasHydrated, router]);
 
-  if (!currentUser) return null;
+  if (!_hasHydrated || !currentUser) return null;
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
