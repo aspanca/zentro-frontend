@@ -102,16 +102,17 @@ export const useAuthStore = create<AuthState>()(
       name: 'kosova-prona-auth',
       onRehydrateStorage: () => (state) => {
         state?.setHasHydrated(true);
-        // Wire up api.ts so it can auto-attach + auto-refresh the access token
-        const store = useAuthStore.getState;
-        registerAuthHandlers(
-          () => store().accessToken,
-          () => store().refreshAccessToken(),
-          () => store().accessToken
-        );
       },
     }
   )
+);
+
+// Wire api.ts to always read the latest token from this store.
+// Must run after useAuthStore is defined — covers both fresh logins and rehydration.
+registerAuthHandlers(
+  () => useAuthStore.getState().accessToken,
+  () => useAuthStore.getState().refreshAccessToken(),
+  () => useAuthStore.getState().accessToken,
 );
 
 // ─── Payment store ────────────────────────────────────────────────────────────
