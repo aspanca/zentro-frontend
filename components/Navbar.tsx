@@ -1,6 +1,7 @@
 'use client';
 
 import Link from 'next/link';
+import Image from 'next/image';
 import { useRouter } from 'next/navigation';
 import { useState } from 'react';
 import { useAuthStore, usePaymentStore } from '@/lib/store';
@@ -62,8 +63,12 @@ export default function Navbar() {
                   href="/profile"
                   className="flex items-center gap-2 text-sm font-medium text-gray-700 hover:text-gray-900 transition-colors"
                 >
-                  <div className="w-8 h-8 rounded-full bg-rose-100 flex items-center justify-center text-rose-600 font-semibold text-sm">
-                    {currentUser.name?.charAt(0).toUpperCase()}
+                  <div className="w-8 h-8 rounded-full overflow-hidden bg-rose-100 flex items-center justify-center text-rose-600 font-semibold text-sm flex-shrink-0">
+                    {currentUser.avatar ? (
+                      <Image src={currentUser.avatar} alt={currentUser.name ?? ''} width={32} height={32} className="object-cover w-full h-full" />
+                    ) : (
+                      currentUser.name?.charAt(0).toUpperCase()
+                    )}
                   </div>
                   <span className="hidden lg:inline">{currentUser.name?.split(' ')[0]}</span>
                 </Link>
@@ -137,9 +142,16 @@ export default function Navbar() {
             <>
               <Link
                 href="/profile"
-                className="block text-gray-700 font-medium py-2"
+                className="flex items-center gap-3 text-gray-700 font-medium py-2"
                 onClick={() => setMenuOpen(false)}
               >
+                <div className="w-8 h-8 rounded-full overflow-hidden bg-rose-100 flex items-center justify-center text-rose-600 font-semibold text-sm flex-shrink-0">
+                  {currentUser.avatar ? (
+                    <Image src={currentUser.avatar} alt={currentUser.name ?? ''} width={32} height={32} className="object-cover w-full h-full" />
+                  ) : (
+                    currentUser.name?.charAt(0).toUpperCase()
+                  )}
+                </div>
                 Profili im — {currentUser.name}
               </Link>
               <button

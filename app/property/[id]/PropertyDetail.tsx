@@ -4,6 +4,7 @@ import { useEffect, useState, useCallback } from 'react';
 import dynamic from 'next/dynamic';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
+import Image from 'next/image';
 import { usePropertyStore, useAuthStore, usePaymentStore } from '@/lib/store';
 import { api } from '@/lib/api';
 import { Property } from '@/types';
@@ -334,9 +335,13 @@ export default function PropertyDetail({ id }: Props) {
                 <div className="border-t border-gray-100 pt-4">
                   <p className="text-xs font-semibold text-gray-500 mb-3">Shitësi / Qiradhënësi</p>
                   <div className="flex items-center gap-3 mb-4">
-                    <div className="w-10 h-10 rounded-full bg-rose-100 flex items-center justify-center text-rose-600 font-semibold flex-shrink-0">
-                      {owner.name?.charAt(0).toUpperCase()}
-                    </div>
+                    <div className="w-10 h-10 rounded-full overflow-hidden bg-rose-100 flex items-center justify-center text-rose-600 font-semibold flex-shrink-0">
+                    {owner.avatar ? (
+                      <Image src={owner.avatar} alt={owner.name ?? ''} width={40} height={40} className="object-cover w-full h-full" />
+                    ) : (
+                      owner.name?.charAt(0).toUpperCase()
+                    )}
+                  </div>
                     <div className="min-w-0">
                       <p className="text-sm font-semibold text-gray-900 truncate">{owner.name}</p>
                       {owner.phone && <p className="text-xs text-gray-500">{owner.phone}</p>}
