@@ -5,7 +5,7 @@ import { persist } from 'zustand/middleware';
 import { FilterState, Property, PropertyType, User } from '@/types';
 import { mockProperties } from './mockData';
 import { generateMockNearby, generateMockProfile } from './insights';
-import { api } from './api';
+import { api, registerAuthHandlers } from './api';
 
 interface AuthState {
   currentUser: User | null;
@@ -102,6 +102,13 @@ export const useAuthStore = create<AuthState>()(
       name: 'kosova-prona-auth',
       onRehydrateStorage: () => (state) => {
         state?.setHasHydrated(true);
+        // Wire up api.ts so it can auto-attach + auto-refresh the access token
+        const store = useAuthStore.getState;
+        registerAuthHandlers(
+          () => store().accessToken,
+          () => store().refreshAccessToken(),
+          () => store().accessToken
+        );
       },
     }
   )

@@ -5,6 +5,7 @@ import { useRouter } from 'next/navigation';
 import { useAuthStore, usePropertyStore } from '@/lib/store';
 import { KOSOVO_CITIES } from '@/lib/mockData';
 import { PropertyType } from '@/types';
+import { api } from '@/lib/api';
 
 interface UploadedImage {
   url: string;
@@ -14,7 +15,7 @@ interface UploadedImage {
 }
 
 export default function CreateListingPage() {
-  const { currentUser, accessToken, _hasHydrated } = useAuthStore();
+  const { currentUser, _hasHydrated } = useAuthStore();
   const { addProperty } = usePropertyStore();
   const router = useRouter();
 
@@ -59,16 +60,7 @@ export default function CreateListingPage() {
           const formData = new FormData();
           formData.append('images', file);
 
-          const res = await fetch(
-            `${process.env.NEXT_PUBLIC_API_URL || ''}/api/upload`,
-            {
-              method: 'POST',
-              headers: accessToken ? { Authorization: `Bearer ${accessToken}` } : {},
-              body: formData,
-            }
-          );
-          const data = await res.json();
-          if (!res.ok) throw new Error(data.error ?? 'Upload failed');
+          const data = await api.post('/api/upload', formData) as { urls: string[] };
 
           setImages((prev) => {
             const next = [...prev];
@@ -118,31 +110,18 @@ export default function CreateListingPage() {
 
     setLoading(true);
     try {
-      const res = await fetch(
-        `${process.env.NEXT_PUBLIC_API_URL || ''}/api/properties`,
-        {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-            Authorization: `Bearer ${accessToken}`,
-          },
-          body: JSON.stringify({
-            title, description, type, city, neighborhood,
-            size: Number(size),
-            pricePerSqm: Number(pricePerSqm),
-            totalPrice,
-            hasBalcony,
-            images: readyImages.map((img) => img.url),
-          }),
-        }
-      );
-
-      const data = await res.json();
-      if (!res.ok) throw new Error(data.error ?? 'Failed to create property');
+      const data = await api.post('/api/properties', {
+        title, description, type, city, neighborhood,
+        size: Number(size),
+        pricePerSqm: Number(pricePerSqm),
+        totalPrice,
+        hasBalcony,
+        images: readyImages.map((img) => img.url),
+      }) as Record<string, unknown>;
 
       // Also add to local store so it shows up instantly
       addProperty({
-        ...data,
+        ...(data as Parameters<typeof addProperty>[0]),
         images: readyImages.map((img) => img.url),
         userId: currentUser.id,
       });
