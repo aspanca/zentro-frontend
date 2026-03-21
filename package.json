@@ -7,8 +7,8 @@
     "build": "next build",
     "start": "next start",
     "lint": "next lint",
-    "server": "node server/index.js",
-    "server:dev": "cd server && yarn dev"
+    "server": "node ../zentro/index.js",
+    "server:dev": "cd ../zentro && yarn dev"
   },
   "dependencies": {
     "@types/leaflet": "^1.9.21",
