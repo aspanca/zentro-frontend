@@ -1,5 +1,6 @@
 import SearchFilters from '@/components/SearchFilters';
 import PropertyGrid from '@/components/PropertyGrid';
+import ApiStatus from '@/components/ApiStatus';
 
 export default function HomePage() {
   return (
@@ -18,6 +19,9 @@ export default function HomePage() {
             😮 Prishtina është bërë si Bangladesh… e di që e ki vështirë me gjet diçka të hajrit.{' '}
             <span className="text-rose-400 font-medium">Ne mundohemi të të ndihmojmë ta bësh zgjedhjen e duhur.</span>
           </p>
+          <div className="mt-4">
+            <ApiStatus />
+          </div>
         </div>
       </section>
 
