@@ -3,10 +3,13 @@
 import { useState, useEffect, useRef } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
+import dynamic from 'next/dynamic';
 import { useAuthStore } from '@/lib/store';
 import { api } from '@/lib/api';
 import { Property, PropertyType } from '@/types';
 import { KOSOVO_CITIES } from '@/lib/mockData';
+
+const LocationPicker = dynamic(() => import('@/components/LocationPicker'), { ssr: false });
 
 // ─── Edit modal ───────────────────────────────────────────────────────────────
 
@@ -25,13 +28,35 @@ function EditModal({ property, onClose, onSaved }: EditModalProps) {
   const [size, setSize]                 = useState(String(property.size));
   const [pricePerSqm, setPricePerSqm]   = useState(String(property.pricePerSqm));
   const [hasBalcony, setHasBalcony]     = useState(property.hasBalcony);
+  const [lat, setLat]                   = useState<number | null>(property.lat ?? null);
+  const [lng, setLng]                   = useState<number | null>(property.lng ?? null);
+  const [images, setImages]             = useState<string[]>(property.images ?? []);
+  const [uploading, setUploading]       = useState(false);
   const [saving, setSaving]             = useState(false);
   const [error, setError]               = useState('');
+  const fileRef                         = useRef<HTMLInputElement>(null);
 
   const totalPrice = size && pricePerSqm ? Number(size) * Number(pricePerSqm) : 0;
 
+  const handleAddPhotos = async (files: FileList) => {
+    setUploading(true);
+    try {
+      await Promise.all(Array.from(files).map(async (file) => {
+        const formData = new FormData();
+        formData.append('images', file);
+        const data = await api.post('/api/upload', formData) as { urls: string[] };
+        setImages((prev) => [...prev, ...data.urls]);
+      }));
+    } catch (err: unknown) {
+      setError(err instanceof Error ? err.message : 'Ngarkimi dështoi.');
+    } finally {
+      setUploading(false);
+    }
+  };
+
   const handleSave = async (e: React.FormEvent) => {
     e.preventDefault();
+    if (images.length === 0) { setError('Duhet të ketë të paktën një foto.'); return; }
     setError('');
     setSaving(true);
     try {
@@ -40,6 +65,8 @@ function EditModal({ property, onClose, onSaved }: EditModalProps) {
         size: Number(size),
         pricePerSqm: Number(pricePerSqm),
         hasBalcony,
+        images,
+        ...(lat !== null && lng !== null && { lat, lng }),
       }) as Property;
       onSaved(updated);
     } catch (err: unknown) {
@@ -144,6 +171,74 @@ function EditModal({ property, onClose, onSaved }: EditModalProps) {
               <span className={`absolute top-0.5 left-0.5 w-5 h-5 bg-white rounded-full shadow transition-transform ${hasBalcony ? 'translate-x-5' : 'translate-x-0'}`} />
             </button>
             <label className="text-sm font-medium text-gray-700">Ka ballkon</label>
+          </div>
+
+          {/* Photos */}
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-2">Fotot</label>
+            <div className="grid grid-cols-4 gap-2 mb-2">
+              {images.map((url, idx) => (
+                <div key={idx} className="relative aspect-square rounded-xl overflow-hidden bg-gray-100 group">
+                  <img src={url} alt="" className="w-full h-full object-cover" />
+                  <button
+                    type="button"
+                    onClick={() => setImages((prev) => prev.filter((_, i) => i !== idx))}
+                    className="absolute inset-0 bg-black/50 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center text-white"
+                  >
+                    <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                    </svg>
+                  </button>
+                  {idx === 0 && (
+                    <div className="absolute bottom-1 left-1 bg-rose-500 text-white text-[9px] font-bold px-1.5 py-0.5 rounded-full">
+                      Kryesore
+                    </div>
+                  )}
+                </div>
+              ))}
+              <button
+                type="button"
+                onClick={() => fileRef.current?.click()}
+                disabled={uploading}
+                className="aspect-square rounded-xl border-2 border-dashed border-gray-300 hover:border-rose-400 hover:bg-rose-50 transition-all flex flex-col items-center justify-center gap-1 text-gray-400 hover:text-rose-500 disabled:opacity-50"
+              >
+                {uploading ? (
+                  <div className="w-5 h-5 border-2 border-rose-400 border-t-transparent rounded-full animate-spin" />
+                ) : (
+                  <>
+                    <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
+                    </svg>
+                    <span className="text-[10px] font-medium">Shto</span>
+                  </>
+                )}
+              </button>
+            </div>
+            <input
+              ref={fileRef} type="file" multiple accept="image/*" className="hidden"
+              onChange={(e) => e.target.files && handleAddPhotos(e.target.files)}
+            />
+          </div>
+
+          {/* Map location */}
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-1">
+              Vendndodhja në hartë <span className="text-gray-400 font-normal text-xs">(opsionale)</span>
+            </label>
+            <p className="text-xs text-gray-500 mb-2">Kliko mbi hartë për të vendosur ose ndryshuar lokacionin.</p>
+            <LocationPicker lat={lat} lng={lng} onChange={(la, ln) => { setLat(la); setLng(ln); }} />
+            {lat && lng && (
+              <div className="flex items-center justify-between mt-1">
+                <p className="text-xs text-gray-500">
+                  {lat.toFixed(5)}, {lng.toFixed(5)}
+                </p>
+                <button type="button" onClick={() => { setLat(null); setLng(null); }}
+                  className="text-xs text-red-500 hover:text-red-700 font-medium"
+                >
+                  Pastro
+                </button>
+              </div>
+            )}
           </div>
 
           <div className="flex gap-3 pt-2">

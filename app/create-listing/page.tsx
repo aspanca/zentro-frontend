@@ -2,10 +2,13 @@
 
 import { useState, useEffect, useRef } from 'react';
 import { useRouter } from 'next/navigation';
+import dynamic from 'next/dynamic';
 import { useAuthStore, usePropertyStore } from '@/lib/store';
 import { KOSOVO_CITIES } from '@/lib/mockData';
 import { PropertyType } from '@/types';
 import { api } from '@/lib/api';
+
+const LocationPicker = dynamic(() => import('@/components/LocationPicker'), { ssr: false });
 
 interface UploadedImage {
   url: string;
@@ -27,6 +30,8 @@ export default function CreateListingPage() {
   const [size, setSize]               = useState('');
   const [pricePerSqm, setPricePerSqm] = useState('');
   const [hasBalcony, setHasBalcony]   = useState(false);
+  const [lat, setLat]                 = useState<number | null>(null);
+  const [lng, setLng]                 = useState<number | null>(null);
   const [images, setImages]           = useState<UploadedImage[]>([]);
   const [loading, setLoading]         = useState(false);
   const [error, setError]             = useState('');
@@ -117,6 +122,7 @@ export default function CreateListingPage() {
         totalPrice,
         hasBalcony,
         images: readyImages.map((img) => img.url),
+        ...(lat !== null && lng !== null && { lat, lng }),
       }) as Record<string, unknown>;
 
       // Also add to local store so it shows up instantly
@@ -212,6 +218,28 @@ export default function CreateListingPage() {
               />
             </div>
           </div>
+        </div>
+
+        {/* Map location */}
+        <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-6 space-y-4">
+          <div>
+            <h2 className="font-semibold text-gray-900">Vendndodhja në hartë <span className="text-gray-400 font-normal text-sm">(opsionale)</span></h2>
+            <p className="text-xs text-gray-500 mt-0.5">Kliko mbi hartë për të vendosur lokacionin e saktë të pronës.</p>
+          </div>
+          <LocationPicker lat={lat} lng={lng} onChange={(la, ln) => { setLat(la); setLng(ln); }} />
+          {lat && lng && (
+            <div className="flex items-center justify-between">
+              <p className="text-xs text-gray-500">
+                Gjerësi: <span className="font-medium text-gray-700">{lat.toFixed(5)}</span> &nbsp;
+                Gjatësi: <span className="font-medium text-gray-700">{lng.toFixed(5)}</span>
+              </p>
+              <button type="button" onClick={() => { setLat(null); setLng(null); }}
+                className="text-xs text-red-500 hover:text-red-700 font-medium"
+              >
+                Pastro lokacionin
+              </button>
+            </div>
+          )}
         </div>
 
         {/* Price & details */}

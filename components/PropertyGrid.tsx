@@ -1,11 +1,68 @@
 'use client';
 
+import { useEffect, useState, useRef } from 'react';
 import { usePropertyStore } from '@/lib/store';
+import { api } from '@/lib/api';
+import { Property } from '@/types';
 import PropertyCard from './PropertyCard';
 
 export default function PropertyGrid() {
-  const { getFilteredProperties, filters } = usePropertyStore();
-  const properties = getFilteredProperties();
+  const { filters } = usePropertyStore();
+  const [properties, setProperties] = useState<Property[]>([]);
+  const [total, setTotal] = useState(0);
+  const [loading, setLoading] = useState(true);
+  const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  useEffect(() => {
+    if (debounceRef.current) clearTimeout(debounceRef.current);
+
+    debounceRef.current = setTimeout(async () => {
+      setLoading(true);
+      try {
+        const params = new URLSearchParams();
+        if (filters.city)          params.set('city',     filters.city);
+        if (filters.propertyType)  params.set('type',     filters.propertyType);
+        if (filters.searchQuery)   params.set('search',   filters.searchQuery);
+        if (filters.minPrice !== '') params.set('minPrice', String(filters.minPrice));
+        if (filters.maxPrice !== '') params.set('maxPrice', String(filters.maxPrice));
+
+        const data = await api.get(`/api/properties?${params.toString()}`) as { total: number; properties: Property[] };
+        setProperties(data.properties);
+        setTotal(data.total);
+      } catch {
+        setProperties([]);
+        setTotal(0);
+      } finally {
+        setLoading(false);
+      }
+    }, 300);
+
+    return () => {
+      if (debounceRef.current) clearTimeout(debounceRef.current);
+    };
+  }, [filters]);
+
+  if (loading) {
+    return (
+      <div>
+        <div className="flex items-center justify-between mb-5">
+          <div className="h-5 w-32 bg-gray-200 rounded animate-pulse" />
+        </div>
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-5">
+          {Array.from({ length: 8 }).map((_, i) => (
+            <div key={i} className="bg-white rounded-2xl overflow-hidden border border-gray-100 animate-pulse">
+              <div className="h-52 bg-gray-200" />
+              <div className="p-4 space-y-3">
+                <div className="h-4 bg-gray-200 rounded w-3/4" />
+                <div className="h-3 bg-gray-200 rounded w-1/2" />
+                <div className="h-5 bg-gray-200 rounded w-1/3" />
+              </div>
+            </div>
+          ))}
+        </div>
+      </div>
+    );
+  }
 
   if (properties.length === 0) {
     return (
@@ -29,7 +86,7 @@ export default function PropertyGrid() {
     <div>
       <div className="flex items-center justify-between mb-5">
         <p className="text-sm text-gray-500">
-          <span className="font-bold text-gray-900 text-base">{properties.length}</span>
+          <span className="font-bold text-gray-900 text-base">{total}</span>
           {' '}prona të gjetura
         </p>
       </div>
