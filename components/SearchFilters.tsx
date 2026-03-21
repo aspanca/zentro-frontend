@@ -58,54 +58,53 @@ export default function SearchFilters() {
     <div className="bg-white border-b border-gray-100 shadow-sm sticky top-16 z-40">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-3">
 
-        {/* ── Single unified row ── */}
-        <div className="flex items-center gap-2 flex-wrap sm:flex-nowrap">
+        <div className="sm:flex sm:items-center sm:gap-2">
 
-          {/* Search input + button */}
-          <div className="flex items-center gap-2 flex-1 min-w-[180px]">
-            <div className="flex items-center gap-2 bg-gray-50 border border-gray-200 rounded-xl px-4 h-11 flex-1 focus-within:border-rose-400 focus-within:ring-2 focus-within:ring-rose-100 transition-all">
-              <svg className="w-4 h-4 text-gray-400 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
-              </svg>
-              <input
-                type="text"
-                placeholder="Kërko pronë, lagje, qytet..."
-                value={localSearch}
-                onChange={(e) => setLocalSearch(e.target.value)}
-                onKeyDown={(e) => e.key === 'Enter' && handleSearch()}
-                className="flex-1 bg-transparent text-sm text-gray-700 placeholder-gray-400 focus:outline-none min-w-0"
-              />
-              {localSearch && (
-                <button
-                  onClick={() => { setLocalSearch(''); setFilter('searchQuery', ''); }}
-                  className="text-gray-400 hover:text-gray-600 transition-colors"
-                >
-                  <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M6 18L18 6M6 6l12 12" />
-                  </svg>
-                </button>
-              )}
-            </div>
-            <button
-              onClick={handleSearch}
-              className="h-11 px-5 bg-rose-500 hover:bg-rose-600 active:bg-rose-700 text-white text-sm font-semibold rounded-xl flex-shrink-0 transition-colors flex items-center gap-2 shadow-sm"
-            >
-              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
-              </svg>
-              <span className="hidden sm:inline">Kërko</span>
-            </button>
+        {/* ── Row 1: search (full width on mobile) ── */}
+        <div className="flex items-center gap-2 w-full sm:flex-1 sm:min-w-0">
+          <div className="flex items-center gap-2 bg-gray-50 border border-gray-200 rounded-xl px-4 h-11 flex-1 focus-within:border-rose-400 focus-within:ring-2 focus-within:ring-rose-100 transition-all">
+            <svg className="w-4 h-4 text-gray-400 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+            </svg>
+            <input
+              type="text"
+              placeholder="Kërko pronë, lagje, qytet..."
+              value={localSearch}
+              onChange={(e) => setLocalSearch(e.target.value)}
+              onKeyDown={(e) => e.key === 'Enter' && handleSearch()}
+              className="flex-1 bg-transparent text-sm text-gray-700 placeholder-gray-400 focus:outline-none min-w-0"
+            />
+            {localSearch && (
+              <button
+                onClick={() => { setLocalSearch(''); setFilter('searchQuery', ''); }}
+                className="text-gray-400 hover:text-gray-600 transition-colors flex-shrink-0"
+              >
+                <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M6 18L18 6M6 6l12 12" />
+                </svg>
+              </button>
+            )}
           </div>
+          <button
+            onClick={handleSearch}
+            className="h-11 px-4 sm:px-5 bg-rose-500 hover:bg-rose-600 active:bg-rose-700 text-white text-sm font-semibold rounded-xl flex-shrink-0 transition-colors flex items-center gap-2 shadow-sm"
+          >
+            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+            </svg>
+            <span className="hidden sm:inline">Kërko</span>
+          </button>
+        </div>
 
-          {/* Divider */}
-          <div className="hidden sm:block w-px h-7 bg-gray-200 flex-shrink-0" />
+        {/* ── Row 2: filters (scrollable on mobile) ── */}
+        <div className="flex items-center gap-2 overflow-x-auto pb-0.5 -mx-1 px-1 mt-2 sm:mt-0 sm:flex-shrink-0">
 
           {/* City select */}
           <div className="relative flex-shrink-0">
             <select
               value={filters.city}
               onChange={(e) => setFilter('city', e.target.value)}
-              className={`h-11 pl-3 pr-8 rounded-xl border text-sm font-medium appearance-none cursor-pointer focus:outline-none focus:ring-2 focus:ring-rose-100 transition-all ${
+              className={`h-9 pl-3 pr-8 rounded-xl border text-sm font-medium appearance-none cursor-pointer focus:outline-none focus:ring-2 focus:ring-rose-100 transition-all ${
                 filters.city
                   ? 'border-rose-300 bg-rose-50 text-rose-700'
                   : 'border-gray-200 bg-gray-50 text-gray-600 hover:border-gray-300'
@@ -123,7 +122,7 @@ export default function SearchFilters() {
           </div>
 
           {/* Property type toggle buttons */}
-          <div className="hidden md:flex items-center bg-gray-50 border border-gray-200 rounded-xl p-1 gap-0.5 flex-shrink-0">
+          <div className="flex items-center bg-gray-50 border border-gray-200 rounded-xl p-1 gap-0.5 flex-shrink-0">
             {PROPERTY_TYPES.map(({ value, label, icon }) => (
               <button
                 key={value}
@@ -139,29 +138,11 @@ export default function SearchFilters() {
             ))}
           </div>
 
-          {/* Property type — mobile compact */}
-          <div className="md:hidden flex-shrink-0">
-            <select
-              value={filters.propertyType}
-              onChange={(e) => setFilter('propertyType', e.target.value as PropertyType | '')}
-              className={`h-11 pl-3 pr-8 rounded-xl border text-sm font-medium appearance-none cursor-pointer focus:outline-none ${
-                filters.propertyType
-                  ? 'border-rose-300 bg-rose-50 text-rose-700'
-                  : 'border-gray-200 bg-gray-50 text-gray-600'
-              }`}
-              style={{ backgroundImage: 'none' }}
-            >
-              {PROPERTY_TYPES.map(({ value, label }) => (
-                <option key={value} value={value}>{label}</option>
-              ))}
-            </select>
-          </div>
-
           {/* Price dropdown */}
           <div className="relative flex-shrink-0" ref={priceRef}>
             <button
               onClick={() => setPriceOpen(!priceOpen)}
-              className={`h-11 flex items-center gap-2 px-4 rounded-xl border text-sm font-medium transition-all focus:outline-none ${
+              className={`h-9 flex items-center gap-2 px-4 rounded-xl border text-sm font-medium transition-all focus:outline-none ${
                 priceActive
                   ? 'border-rose-300 bg-rose-50 text-rose-700'
                   : 'border-gray-200 bg-gray-50 text-gray-600 hover:border-gray-300'
@@ -235,7 +216,7 @@ export default function SearchFilters() {
           {activeCount > 0 && (
             <button
               onClick={resetFilters}
-              className="flex-shrink-0 flex items-center gap-1.5 h-11 px-4 rounded-xl bg-gray-900 hover:bg-gray-700 text-white text-xs font-semibold transition-colors"
+              className="flex-shrink-0 flex items-center gap-1.5 h-9 px-3 rounded-xl bg-gray-900 hover:bg-gray-700 text-white text-xs font-semibold transition-colors"
             >
               <span className="w-4 h-4 rounded-full bg-rose-500 text-white text-[10px] font-bold flex items-center justify-center flex-shrink-0">
                 {activeCount}
@@ -244,6 +225,8 @@ export default function SearchFilters() {
             </button>
           )}
         </div>
+
+        </div>{/* end sm:flex wrapper */}
 
         {/* ── Active filter chips ── */}
         {activeCount > 0 && (
