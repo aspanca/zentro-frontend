@@ -58,9 +58,9 @@ export default function Navbar() {
                   className="flex items-center gap-2 text-sm font-medium text-gray-700 hover:text-gray-900 transition-colors"
                 >
                   <div className="w-8 h-8 rounded-full bg-rose-100 flex items-center justify-center text-rose-600 font-semibold text-sm">
-                    {currentUser.fullName.charAt(0).toUpperCase()}
+                    {currentUser.name?.charAt(0).toUpperCase()}
                   </div>
-                  <span className="hidden lg:inline">{currentUser.fullName.split(' ')[0]}</span>
+                  <span className="hidden lg:inline">{currentUser.name?.split(' ')[0]}</span>
                 </Link>
                 <button
                   onClick={handleLogout}
@@ -126,7 +126,7 @@ export default function Navbar() {
                 className="block text-gray-700 font-medium py-2"
                 onClick={() => setMenuOpen(false)}
               >
-                Profili im — {currentUser.fullName}
+                Profili im — {currentUser.name}
               </Link>
               <button
                 onClick={handleLogout}
