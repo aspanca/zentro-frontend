@@ -11,13 +11,16 @@
     "server:dev": "cd ../zentro && yarn dev"
   },
   "dependencies": {
+    "@hookform/resolvers": "^5.2.2",
     "@react-leaflet/core": "^2.1.0",
     "@types/leaflet": "^1.9.21",
     "leaflet": "^1.9.4",
     "next": "14.2.35",
     "react": "^18",
     "react-dom": "^18",
+    "react-hook-form": "^7.71.2",
     "react-leaflet": "^4.2.1",
+    "zod": "^4.3.6",
     "zustand": "^5.0.12"
   },
   "devDependencies": {

@@ -20,11 +20,16 @@ export default function PropertyGrid() {
       setLoading(true);
       try {
         const params = new URLSearchParams();
-        if (filters.city)          params.set('city',     filters.city);
-        if (filters.propertyType)  params.set('type',     filters.propertyType);
-        if (filters.searchQuery)   params.set('search',   filters.searchQuery);
-        if (filters.minPrice !== '') params.set('minPrice', String(filters.minPrice));
-        if (filters.maxPrice !== '') params.set('maxPrice', String(filters.maxPrice));
+        if (filters.city)          params.set('city',        filters.city);
+        if (filters.listingType)   params.set('listingType', filters.listingType);
+        if (filters.category)      params.set('category',    filters.category);
+        if (filters.searchQuery)   params.set('search',      filters.searchQuery);
+        if (filters.minPrice !== '') params.set('minPrice',  String(filters.minPrice));
+        if (filters.maxPrice !== '') params.set('maxPrice',  String(filters.maxPrice));
+        if (filters.minSize  !== '') params.set('minSize',   String(filters.minSize));
+        if (filters.maxSize  !== '') params.set('maxSize',   String(filters.maxSize));
+        if (filters.bedrooms !== '') params.set('bedrooms',  String(filters.bedrooms));
+        if (filters.bathrooms !== '') params.set('bathrooms', String(filters.bathrooms));
 
         const data = await api.get(`/api/properties?${params.toString()}`) as { total: number; properties: Property[] };
         setProperties(data.properties);

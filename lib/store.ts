@@ -2,10 +2,10 @@
 
 import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
-import { FilterState, Property, PropertyType, User } from '@/types';
-import { mockProperties } from './mockData';
-import { generateMockNearby, generateMockProfile } from './insights';
+import { FilterState, Property, User } from '@/types';
 import { api, registerAuthHandlers } from './api';
+
+// ─── Auth store ───────────────────────────────────────────────────────────────
 
 interface AuthState {
   currentUser: User | null;
@@ -14,28 +14,12 @@ interface AuthState {
   _hasHydrated: boolean;
   setHasHydrated: (val: boolean) => void;
   login: (email: string, password: string) => Promise<{ ok: boolean; error?: string; unverified?: boolean }>;
-  register: (name: string, email: string, password: string) => Promise<{ ok: boolean; error?: string; email?: string }>;
+  register: (name: string, email: string, password: string, phone?: string) => Promise<{ ok: boolean; error?: string; email?: string }>;
   verify: (email: string, code: string) => Promise<{ ok: boolean; error?: string }>;
+  updateMe: (data: { name?: string; phone?: string; avatar?: string | null }) => Promise<{ ok: boolean; error?: string }>;
   logout: () => Promise<void>;
   refreshAccessToken: () => Promise<boolean>;
 }
-
-interface PropertyState {
-  properties: Property[];
-  filters: FilterState;
-  addProperty: (property: Omit<Property, 'id' | 'createdAt'>) => void;
-  setFilter: (key: keyof FilterState, value: string | number | PropertyType | '') => void;
-  resetFilters: () => void;
-  getFilteredProperties: () => Property[];
-}
-
-const defaultFilters: FilterState = {
-  city: '',
-  minPrice: '',
-  maxPrice: '',
-  propertyType: '',
-  searchQuery: '',
-};
 
 export const useAuthStore = create<AuthState>()(
   persist(
@@ -48,19 +32,18 @@ export const useAuthStore = create<AuthState>()(
 
       login: async (email, password) => {
         try {
-          const data = await api.post('/api/auth/login', { email, password });
+          const data = await api.post('/api/auth/login', { email, password }) as { user: User; accessToken: string; refreshToken: string };
           set({ currentUser: data.user, accessToken: data.accessToken, refreshToken: data.refreshToken });
           return { ok: true };
         } catch (err: unknown) {
           const msg = err instanceof Error ? err.message : 'Login failed';
-          const unverified = msg.includes('verify your email');
-          return { ok: false, error: msg, unverified };
+          return { ok: false, error: msg, unverified: msg.includes('verify your email') };
         }
       },
 
-      register: async (name, email, password) => {
+      register: async (name, email, password, phone = '') => {
         try {
-          const data = await api.post('/api/auth/register', { name, email, password });
+          const data = await api.post('/api/auth/register', { name, email, password, phone }) as { email: string };
           return { ok: true, email: data.email };
         } catch (err: unknown) {
           return { ok: false, error: err instanceof Error ? err.message : 'Registration failed' };
@@ -69,7 +52,7 @@ export const useAuthStore = create<AuthState>()(
 
       verify: async (email, code) => {
         try {
-          const data = await api.post('/api/auth/verify', { email, code });
+          const data = await api.post('/api/auth/verify', { email, code }) as { user: User; accessToken: string; refreshToken: string };
           set({ currentUser: data.user, accessToken: data.accessToken, refreshToken: data.refreshToken });
           return { ok: true };
         } catch (err: unknown) {
@@ -77,11 +60,19 @@ export const useAuthStore = create<AuthState>()(
         }
       },
 
+      updateMe: async (updates) => {
+        try {
+          const data = await api.put('/api/auth/me', updates) as { user: User };
+          set({ currentUser: data.user });
+          return { ok: true };
+        } catch (err: unknown) {
+          return { ok: false, error: err instanceof Error ? err.message : 'Update failed' };
+        }
+      },
+
       logout: async () => {
         const { refreshToken } = get();
-        if (refreshToken) {
-          await api.post('/api/auth/logout', { refreshToken }).catch(() => {});
-        }
+        if (refreshToken) await api.post('/api/auth/logout', { refreshToken }).catch(() => {});
         set({ currentUser: null, accessToken: null, refreshToken: null });
       },
 
@@ -89,7 +80,7 @@ export const useAuthStore = create<AuthState>()(
         const { refreshToken } = get();
         if (!refreshToken) return false;
         try {
-          const data = await api.post('/api/auth/refresh', { refreshToken });
+          const data = await api.post('/api/auth/refresh', { refreshToken }) as { accessToken: string; refreshToken: string };
           set({ accessToken: data.accessToken, refreshToken: data.refreshToken });
           return true;
         } catch {
@@ -100,15 +91,11 @@ export const useAuthStore = create<AuthState>()(
     }),
     {
       name: 'kosova-prona-auth',
-      onRehydrateStorage: () => (state) => {
-        state?.setHasHydrated(true);
-      },
+      onRehydrateStorage: () => (state) => { state?.setHasHydrated(true); },
     }
   )
 );
 
-// Wire api.ts to always read the latest token from this store.
-// Must run after useAuthStore is defined — covers both fresh logins and rehydration.
 registerAuthHandlers(
   () => useAuthStore.getState().accessToken,
   () => useAuthStore.getState().refreshAccessToken(),
@@ -123,7 +110,7 @@ interface PaymentState {
   isUnlocked: (id: string) => boolean;
   unlockProperty: (id: string) => void;
   addCredits: (n: number) => void;
-  useCredit: (id: string) => boolean; // returns false if no credits
+  useCredit: (id: string) => boolean;
 }
 
 export const usePaymentStore = create<PaymentState>()(
@@ -133,15 +120,10 @@ export const usePaymentStore = create<PaymentState>()(
       credits: 0,
       isUnlocked: (id) => get().unlockedProperties.includes(id),
       unlockProperty: (id) =>
-        set((s) => ({
-          unlockedProperties: s.unlockedProperties.includes(id)
-            ? s.unlockedProperties
-            : [...s.unlockedProperties, id],
-        })),
+        set((s) => ({ unlockedProperties: s.unlockedProperties.includes(id) ? s.unlockedProperties : [...s.unlockedProperties, id] })),
       addCredits: (n) => set((s) => ({ credits: s.credits + n })),
       useCredit: (id) => {
-        const { credits } = get();
-        if (credits <= 0) return false;
+        if (get().credits <= 0) return false;
         set((s) => ({ credits: s.credits - 1 }));
         get().unlockProperty(id);
         return true;
@@ -153,46 +135,45 @@ export const usePaymentStore = create<PaymentState>()(
 
 // ─── Property store ───────────────────────────────────────────────────────────
 
+interface PropertyState {
+  properties: Property[];
+  filters: FilterState;
+  setFilter: (key: keyof FilterState, value: unknown) => void;
+  toggleArrayFilter: (key: 'furnishing' | 'heating' | 'extras', value: string) => void;
+  resetFilters: () => void;
+}
+
+export const defaultFilters: FilterState = {
+  searchQuery: '',
+  city: '',
+  listingType: '',
+  category: '',
+  minPrice: '',
+  maxPrice: '',
+  minSize: '',
+  maxSize: '',
+  bedrooms: '',
+  bathrooms: '',
+  orientation: '',
+  furnishing: [],
+  heating: [],
+  extras: [],
+};
+
 export const usePropertyStore = create<PropertyState>()(
   persist(
-    (set, get) => ({
-      properties: mockProperties,
+    (set) => ({
+      properties: [],
       filters: defaultFilters,
-      addProperty: (propertyData) => {
-        const seed = Date.now() % 4;
-        const newProperty: Property = {
-          ...propertyData,
-          id: `prop-${Date.now()}`,
-          createdAt: new Date().toISOString(),
-          nearby: propertyData.nearby ?? generateMockNearby(seed),
-          neighborhoodProfile: propertyData.neighborhoodProfile ?? generateMockProfile(seed),
-        };
-        set((state) => ({ properties: [newProperty, ...state.properties] }));
-      },
-      setFilter: (key, value) => {
-        set((state) => ({ filters: { ...state.filters, [key]: value } }));
-      },
+      setFilter: (key, value) => set((s) => ({ filters: { ...s.filters, [key]: value } })),
+      toggleArrayFilter: (key, value) =>
+        set((s) => {
+          const current = s.filters[key] as string[];
+          const next = current.includes(value) ? current.filter((v) => v !== value) : [...current, value];
+          return { filters: { ...s.filters, [key]: next } };
+        }),
       resetFilters: () => set({ filters: defaultFilters }),
-      getFilteredProperties: () => {
-        const { properties, filters } = get();
-        return properties.filter((p) => {
-          if (filters.city && p.city !== filters.city) return false;
-          if (filters.propertyType && p.type !== filters.propertyType) return false;
-          if (filters.minPrice !== '' && p.totalPrice < Number(filters.minPrice)) return false;
-          if (filters.maxPrice !== '' && p.totalPrice > Number(filters.maxPrice)) return false;
-          if (filters.searchQuery) {
-            const q = filters.searchQuery.toLowerCase();
-            return (
-              p.title.toLowerCase().includes(q) ||
-              p.city.toLowerCase().includes(q) ||
-              p.neighborhood.toLowerCase().includes(q) ||
-              p.description.toLowerCase().includes(q)
-            );
-          }
-          return true;
-        });
-      },
     }),
-    { name: 'kosova-prona-properties-v6' }
+    { name: 'kosova-prona-filters-v1' }
   )
 );
