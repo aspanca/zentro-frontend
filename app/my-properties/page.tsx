@@ -93,9 +93,9 @@ function EditModal({ property, onClose, onSaved }: { property: Property; onClose
     try {
       for (const file of Array.from(files)) {
         const fd = new FormData();
-        fd.append('file', file);
-        const data = await api.post('/api/upload', fd) as { url: string };
-        setImages((prev) => [...prev, data.url]);
+        fd.append('images', file);
+        const data = await api.post('/api/upload', fd) as { urls: string[] };
+        setImages((prev) => [...prev, data.urls[0]]);
       }
     } catch (err: unknown) {
       setError(err instanceof Error ? err.message : 'Ngarkimi dështoi.');

@@ -49,9 +49,9 @@ export default function ProfilePage() {
     setError('');
     try {
       const fd = new FormData();
-      fd.append('file', file);
-      const data = await api.post('/api/upload', fd) as { url: string };
-      setAvatar(data.url);
+      fd.append('images', file);
+      const data = await api.post('/api/upload', fd) as { urls: string[] };
+      setAvatar(data.urls[0]);
     } catch {
       setError('Ngarkimi i fotografisë dështoi.');
     } finally {

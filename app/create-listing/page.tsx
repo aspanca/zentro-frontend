@@ -170,9 +170,9 @@ export default function CreateListingPage() {
       const uploaded: string[] = [];
       for (const file of files) {
         const fd = new FormData();
-        fd.append('file', file);
-        const data = await api.post('/api/upload', fd) as { url: string };
-        uploaded.push(data.url);
+        fd.append('images', file);
+        const data = await api.post('/api/upload', fd) as { urls: string[] };
+        uploaded.push(data.urls[0]);
       }
       setImages((prev) => [...prev, ...uploaded]);
     } catch {
