@@ -7,16 +7,16 @@ const inter = Inter({ subsets: ['latin'] });
 
 export const metadata: Metadata = {
   title: {
-    default: 'KosovaProna — Tregu i pasurive të patundshme në Kosovë',
-    template: '%s | KosovaProna',
+    default: 'Zentro — Tregu i pasurive të patundshme në Kosovë',
+    template: '%s | Zentro',
   },
   description:
     'Gjeni pronën tuaj të ëndrrave në Kosovë. Banesa, shtëpi dhe truall për shitje në Prishtinë, Prizren, Pejë dhe qytete tjera.',
-  keywords: ['prona Kosovë', 'banesa shitje', 'shtëpi Prishtinë', 'real estate Kosovo'],
+  keywords: ['prona Kosovë', 'banesa shitje', 'shtëpi Prishtinë', 'real estate Kosovo', 'Zentro'],
   openGraph: {
     type: 'website',
     locale: 'sq_XK',
-    siteName: 'KosovaProna',
+    siteName: 'Zentro',
   },
 };
 
@@ -40,11 +40,11 @@ export default function RootLayout({
                   </svg>
                 </div>
                 <span className="font-bold text-gray-900">
-                  Kosova<span className="text-rose-500">Prona</span>
+                  Zen<span className="text-rose-500">tro</span>
                 </span>
               </div>
               <p className="text-sm text-gray-400">
-                © {new Date().getFullYear()} KosovaProna. Të gjitha të drejtat e rezervuara.
+                © {new Date().getFullYear()} Zentro. Të gjitha të drejtat e rezervuara.
               </p>
             </div>
           </div>

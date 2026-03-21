@@ -1,11 +1,15 @@
 'use client';
 
 import { useEffect, useState } from 'react';
+import dynamic from 'next/dynamic';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
-import { usePropertyStore, useAuthStore } from '@/lib/store';
+import { usePropertyStore, useAuthStore, usePaymentStore } from '@/lib/store';
 import { Property } from '@/types';
 import { formatPrice, formatPricePerSqm, propertyTypeLabel, propertyTypeColor, timeAgo } from '@/lib/utils';
+import InsightsPaywall from '@/components/InsightsPaywall';
+
+const PropertyInsights = dynamic(() => import('@/components/PropertyInsights'), { ssr: false });
 
 interface Props {
   id: string;
@@ -14,19 +18,22 @@ interface Props {
 export default function PropertyDetail({ id }: Props) {
   const { properties } = usePropertyStore();
   const { users } = useAuthStore();
+  const { isUnlocked } = usePaymentStore();
   const router = useRouter();
   const [property, setProperty] = useState<Property | null>(null);
   const [activeImage, setActiveImage] = useState(0);
   const [notFound, setNotFound] = useState(false);
+  const [unlocked, setUnlocked] = useState(false);
 
   useEffect(() => {
     const found = properties.find((p) => p.id === id);
     if (found) {
       setProperty(found);
+      setUnlocked(isUnlocked(id));
     } else {
       setNotFound(true);
     }
-  }, [id, properties]);
+  }, [id, properties, isUnlocked]);
 
   if (notFound) {
     return (
@@ -58,7 +65,7 @@ export default function PropertyDetail({ id }: Props) {
   const owner = users.find((u) => u.id === property.userId);
 
   return (
-    <div className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+    <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
       <button
         onClick={() => router.back()}
         className="flex items-center gap-2 text-gray-500 hover:text-gray-900 text-sm mb-6 transition-colors group"
@@ -138,6 +145,7 @@ export default function PropertyDetail({ id }: Props) {
           </div>
         </div>
 
+        {/* Right sidebar */}
         <div className="lg:col-span-1">
           <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-6 sticky top-20">
             <div className="mb-5">
@@ -162,12 +170,10 @@ export default function PropertyDetail({ id }: Props) {
                 <span className="text-gray-500">Lloji</span>
                 <span className="font-medium text-gray-900">{propertyTypeLabel(property.type)}</span>
               </div>
-              {property.type !== 'land' && (
-                <div className="flex justify-between text-sm">
-                  <span className="text-gray-500">Ballkon</span>
-                  <span className="font-medium text-gray-900">{property.hasBalcony ? 'Po' : 'Jo'}</span>
-                </div>
-              )}
+              <div className="flex justify-between text-sm">
+                <span className="text-gray-500">Ballkon</span>
+                <span className="font-medium text-gray-900">{property.hasBalcony ? 'Po' : 'Jo'}</span>
+              </div>
             </div>
 
             {owner && (
@@ -199,6 +205,18 @@ export default function PropertyDetail({ id }: Props) {
           </div>
         </div>
       </div>
+
+      {/* Insights — full width below the grid */}
+      {unlocked ? (
+        <PropertyInsights property={property} allProperties={properties} />
+      ) : (
+        <div className="mt-8">
+          <InsightsPaywall
+            propertyId={property.id}
+            onUnlocked={() => setUnlocked(true)}
+          />
+        </div>
+      )}
     </div>
   );
 }

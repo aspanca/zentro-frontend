@@ -1,34 +1,32 @@
-import SearchBar from '@/components/SearchBar';
-import Filters from '@/components/Filters';
+import SearchFilters from '@/components/SearchFilters';
 import PropertyGrid from '@/components/PropertyGrid';
 
 export default function HomePage() {
   return (
     <div>
-      <section className="bg-gradient-to-b from-gray-900 to-gray-800 text-white py-16 px-4">
-        <div className="max-w-4xl mx-auto text-center">
-          <h1 className="text-3xl sm:text-4xl md:text-5xl font-bold mb-4 leading-tight">
+      {/* Hero */}
+      <section className="bg-gradient-to-b from-gray-900 to-gray-800 text-white py-14 px-4">
+        <div className="max-w-3xl mx-auto text-center">
+          <h1 className="text-3xl sm:text-4xl md:text-5xl font-bold mb-3 leading-tight">
             Gjeni pronën tuaj<br />
             <span className="text-rose-400">në Kosovë</span>
           </h1>
-          <p className="text-gray-300 text-base sm:text-lg mb-8 max-w-xl mx-auto">
-            Qindra prona në shitje — banesa, shtëpi dhe truall — në të gjitha qytetet e Kosovës.
+          <p className="text-gray-400 text-sm sm:text-base max-w-lg mx-auto mb-6">
+            Banesa, shtëpi dhe truall — me çmime, analiza dhe informata të detajuara.
           </p>
-          <SearchBar />
+          <p className="inline-block text-sm text-gray-300 bg-white/5 border border-white/10 rounded-2xl px-5 py-3 max-w-xl mx-auto leading-relaxed">
+            😮 Prishtina është bërë si Bangladesh… e di që e ki vështirë me gjet diçka të hajrit.{' '}
+            <span className="text-rose-400 font-medium">Ne mundohemi të të ndihmojmë ta bësh zgjedhjen e duhur.</span>
+          </p>
         </div>
       </section>
 
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-10">
-        <div className="flex flex-col lg:flex-row gap-6">
-          <aside className="w-full lg:w-72 flex-shrink-0">
-            <div className="lg:sticky lg:top-20">
-              <Filters />
-            </div>
-          </aside>
-          <div className="flex-1 min-w-0">
-            <PropertyGrid />
-          </div>
-        </div>
+      {/* Unified search + filters bar */}
+      <SearchFilters />
+
+      {/* Full-width listings grid */}
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+        <PropertyGrid />
       </div>
     </div>
   );

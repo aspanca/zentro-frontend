@@ -120,7 +120,7 @@ export default function CreateListingPage() {
               Lloji i pronës <span className="text-red-400">*</span>
             </label>
             <div className="grid grid-cols-3 gap-3">
-              {(['flat', 'house', 'land'] as PropertyType[]).map((t) => (
+              {(['flat', 'house'] as PropertyType[]).map((t) => (
                 <button
                   key={t}
                   type="button"
@@ -219,24 +219,22 @@ export default function CreateListingPage() {
             </div>
           )}
 
-          {type !== 'land' && (
-            <div className="flex items-center gap-3">
-              <button
-                type="button"
-                onClick={() => setHasBalcony(!hasBalcony)}
-                className={`relative w-11 h-6 rounded-full transition-colors ${
-                  hasBalcony ? 'bg-rose-500' : 'bg-gray-200'
+          <div className="flex items-center gap-3">
+            <button
+              type="button"
+              onClick={() => setHasBalcony(!hasBalcony)}
+              className={`relative w-11 h-6 rounded-full transition-colors ${
+                hasBalcony ? 'bg-rose-500' : 'bg-gray-200'
+              }`}
+            >
+              <span
+                className={`absolute top-0.5 left-0.5 w-5 h-5 bg-white rounded-full shadow transition-transform ${
+                  hasBalcony ? 'translate-x-5' : 'translate-x-0'
                 }`}
-              >
-                <span
-                  className={`absolute top-0.5 left-0.5 w-5 h-5 bg-white rounded-full shadow transition-transform ${
-                    hasBalcony ? 'translate-x-5' : 'translate-x-0'
-                  }`}
-                />
-              </button>
-              <label className="text-sm font-medium text-gray-700">Ka ballkon</label>
-            </div>
-          )}
+              />
+            </button>
+            <label className="text-sm font-medium text-gray-700">Ka ballkon</label>
+          </div>
         </div>
 
         <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-6">

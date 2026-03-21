@@ -4,6 +4,7 @@ import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
 import { FilterState, Property, PropertyType, User } from '@/types';
 import { mockProperties, mockUsers } from './mockData';
+import { generateMockNearby, generateMockProfile } from './insights';
 
 interface AuthState {
   currentUser: User | null;
@@ -80,16 +81,57 @@ export const useAuthStore = create<AuthState>()(
   )
 );
 
+// ─── Payment store ────────────────────────────────────────────────────────────
+
+interface PaymentState {
+  unlockedProperties: string[];
+  credits: number;
+  isUnlocked: (id: string) => boolean;
+  unlockProperty: (id: string) => void;
+  addCredits: (n: number) => void;
+  useCredit: (id: string) => boolean; // returns false if no credits
+}
+
+export const usePaymentStore = create<PaymentState>()(
+  persist(
+    (set, get) => ({
+      unlockedProperties: [],
+      credits: 0,
+      isUnlocked: (id) => get().unlockedProperties.includes(id),
+      unlockProperty: (id) =>
+        set((s) => ({
+          unlockedProperties: s.unlockedProperties.includes(id)
+            ? s.unlockedProperties
+            : [...s.unlockedProperties, id],
+        })),
+      addCredits: (n) => set((s) => ({ credits: s.credits + n })),
+      useCredit: (id) => {
+        const { credits } = get();
+        if (credits <= 0) return false;
+        set((s) => ({ credits: s.credits - 1 }));
+        get().unlockProperty(id);
+        return true;
+      },
+    }),
+    { name: 'kosova-prona-payments-v1' }
+  )
+);
+
+// ─── Property store ───────────────────────────────────────────────────────────
+
 export const usePropertyStore = create<PropertyState>()(
   persist(
     (set, get) => ({
       properties: mockProperties,
       filters: defaultFilters,
       addProperty: (propertyData) => {
+        const seed = Date.now() % 4;
         const newProperty: Property = {
           ...propertyData,
           id: `prop-${Date.now()}`,
           createdAt: new Date().toISOString(),
+          nearby: propertyData.nearby ?? generateMockNearby(seed),
+          neighborhoodProfile: propertyData.neighborhoodProfile ?? generateMockProfile(seed),
         };
         set((state) => ({ properties: [newProperty, ...state.properties] }));
       },
@@ -117,6 +159,6 @@ export const usePropertyStore = create<PropertyState>()(
         });
       },
     }),
-    { name: 'kosova-prona-properties' }
+    { name: 'kosova-prona-properties-v6' }
   )
 );

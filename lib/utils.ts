@@ -12,7 +12,6 @@ export function propertyTypeLabel(type: PropertyType): string {
   const labels: Record<PropertyType, string> = {
     flat: 'Banesë',
     house: 'Shtëpi',
-    land: 'Truall',
   };
   return labels[type];
 }
@@ -21,7 +20,6 @@ export function propertyTypeColor(type: PropertyType): string {
   const colors: Record<PropertyType, string> = {
     flat: 'bg-blue-100 text-blue-700',
     house: 'bg-green-100 text-green-700',
-    land: 'bg-amber-100 text-amber-700',
   };
   return colors[type];
 }
