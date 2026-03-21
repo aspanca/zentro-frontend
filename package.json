@@ -11,12 +11,13 @@
     "server:dev": "cd ../zentro && yarn dev"
   },
   "dependencies": {
+    "@react-leaflet/core": "^2.1.0",
     "@types/leaflet": "^1.9.21",
     "leaflet": "^1.9.4",
     "next": "14.2.35",
     "react": "^18",
     "react-dom": "^18",
-    "react-leaflet": "^5.0.0",
+    "react-leaflet": "^4.2.1",
     "zustand": "^5.0.12"
   },
   "devDependencies": {
