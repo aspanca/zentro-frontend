@@ -7,26 +7,44 @@ import Link from 'next/link';
 import { usePropertyStore, useAuthStore, usePaymentStore } from '@/lib/store';
 import { api } from '@/lib/api';
 import { Property } from '@/types';
-import { formatPrice, formatPricePerSqm, propertyTypeLabel, propertyTypeColor, timeAgo } from '@/lib/utils';
+import { formatPrice, formatPricePerSqm, timeAgo } from '@/lib/utils';
 import InsightsPaywall from '@/components/InsightsPaywall';
 
 const PropertyInsights = dynamic(() => import('@/components/PropertyInsights'), { ssr: false });
 
-interface Props { id: string }
+// ─── Label maps ───────────────────────────────────────────────────────────────
+
+const CATEGORY_LABELS: Record<string, string> = {
+  apartment: 'Banesë', house: 'Shtëpi', office: 'Zyrë', store: 'Dyqan',
+  land: 'Tokë', object: 'Objekt', warehouse: 'Depo', business: 'Biznes',
+};
+const ORIENTATION_LABELS: Record<string, string> = {
+  east: 'Lindje', west: 'Perëndim', north: 'Veri', south: 'Jug',
+};
+const FURNISHING_LABELS: Record<string, string> = {
+  living_room: 'Dhoma ndenje', kitchen: 'Kuzhinë', bathroom: 'Banjë',
+  bedroom: 'Dhomë gjumi', wc: 'WC', unfurnished: 'Pa mobilim',
+};
+const HEATING_LABELS: Record<string, string> = {
+  wood: 'Dru', pellet: 'Pellet', gas: 'Gaz', keds: 'KEDS', termokos: 'Termokos', oil: 'Mazut',
+};
+const EXTRA_LABELS: Record<string, string> = {
+  elevator: 'Ashensor', garage: 'Garazh', parking: 'Parking',
+  air_conditioning: 'Klimë', tv: 'TV', internet: 'Internet', storage: 'Depo',
+};
 
 // ─── Lightbox ─────────────────────────────────────────────────────────────────
 
 function Lightbox({ images, startIdx, onClose }: { images: string[]; startIdx: number; onClose: () => void }) {
   const [idx, setIdx] = useState(startIdx);
-
   const prev = useCallback(() => setIdx((i) => (i - 1 + images.length) % images.length), [images.length]);
   const next = useCallback(() => setIdx((i) => (i + 1) % images.length), [images.length]);
 
   useEffect(() => {
     const handler = (e: KeyboardEvent) => {
-      if (e.key === 'Escape') onClose();
-      if (e.key === 'ArrowLeft')  prev();
-      if (e.key === 'ArrowRight') next();
+      if (e.key === 'Escape')      onClose();
+      if (e.key === 'ArrowLeft')   prev();
+      if (e.key === 'ArrowRight')  next();
     };
     window.addEventListener('keydown', handler);
     return () => window.removeEventListener('keydown', handler);
@@ -34,56 +52,32 @@ function Lightbox({ images, startIdx, onClose }: { images: string[]; startIdx: n
 
   return (
     <div className="fixed inset-0 z-50 bg-black/95 flex flex-col" onClick={onClose}>
-      {/* Top bar */}
       <div className="flex items-center justify-between px-4 py-3 flex-shrink-0" onClick={(e) => e.stopPropagation()}>
         <span className="text-white/60 text-sm">{idx + 1} / {images.length}</span>
-        <button onClick={onClose} className="text-white/70 hover:text-white transition-colors p-2">
+        <button onClick={onClose} className="text-white/70 hover:text-white p-2">
           <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
           </svg>
         </button>
       </div>
-
-      {/* Main image */}
       <div className="flex-1 flex items-center justify-center relative px-12 min-h-0" onClick={(e) => e.stopPropagation()}>
-        <img
-          src={images[idx]}
-          alt=""
-          className="max-h-full max-w-full object-contain select-none"
-          draggable={false}
-        />
+        <img src={images[idx]} alt="" className="max-h-full max-w-full object-contain select-none" draggable={false} />
         {images.length > 1 && (
           <>
-            <button
-              onClick={prev}
-              className="absolute left-2 top-1/2 -translate-y-1/2 w-10 h-10 rounded-full bg-white/10 hover:bg-white/20 text-white flex items-center justify-center transition-all"
-            >
-              <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
-              </svg>
+            <button onClick={prev} className="absolute left-2 top-1/2 -translate-y-1/2 w-10 h-10 rounded-full bg-white/10 hover:bg-white/20 text-white flex items-center justify-center">
+              <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" /></svg>
             </button>
-            <button
-              onClick={next}
-              className="absolute right-2 top-1/2 -translate-y-1/2 w-10 h-10 rounded-full bg-white/10 hover:bg-white/20 text-white flex items-center justify-center transition-all"
-            >
-              <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
-              </svg>
+            <button onClick={next} className="absolute right-2 top-1/2 -translate-y-1/2 w-10 h-10 rounded-full bg-white/10 hover:bg-white/20 text-white flex items-center justify-center">
+              <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" /></svg>
             </button>
           </>
         )}
       </div>
-
-      {/* Thumbnails */}
       {images.length > 1 && (
         <div className="flex-shrink-0 flex justify-center gap-2 px-4 py-4 overflow-x-auto" onClick={(e) => e.stopPropagation()}>
           {images.map((img, i) => (
-            <button
-              key={i}
-              onClick={() => setIdx(i)}
-              className={`w-14 h-10 rounded-lg overflow-hidden flex-shrink-0 border-2 transition-all ${
-                i === idx ? 'border-white opacity-100' : 'border-transparent opacity-50 hover:opacity-80'
-              }`}
+            <button key={i} onClick={() => setIdx(i)}
+              className={`w-14 h-10 rounded-lg overflow-hidden flex-shrink-0 border-2 transition-all ${i === idx ? 'border-white opacity-100' : 'border-transparent opacity-50 hover:opacity-80'}`}
             >
               <img src={img} alt="" className="w-full h-full object-cover" />
             </button>
@@ -94,7 +88,36 @@ function Lightbox({ images, startIdx, onClose }: { images: string[]; startIdx: n
   );
 }
 
+// ─── Detail row ───────────────────────────────────────────────────────────────
+
+function DetailRow({ label, value }: { label: string; value: React.ReactNode }) {
+  if (!value && value !== 0) return null;
+  return (
+    <div className="flex justify-between items-start py-2.5 border-b border-gray-50 last:border-0 text-sm">
+      <span className="text-gray-500 flex-shrink-0 mr-4">{label}</span>
+      <span className="font-medium text-gray-900 text-right">{value}</span>
+    </div>
+  );
+}
+
+function TagList({ items, labels }: { items: string[]; labels: Record<string, string> }) {
+  if (!items || items.length === 0) return <span className="text-gray-400 text-sm">—</span>;
+  return (
+    <div className="flex flex-wrap gap-1.5">
+      {items.map((v) => (
+        <span key={v} className="bg-gray-100 text-gray-700 text-xs font-medium px-2.5 py-1 rounded-full">
+          {labels[v] ?? v}
+        </span>
+      ))}
+    </div>
+  );
+}
+
 // ─── Main component ───────────────────────────────────────────────────────────
+
+interface Props { id: string }
+
+type OwnerType = { id: string; name: string; email: string; phone?: string; avatar?: string | null };
 
 export default function PropertyDetail({ id }: Props) {
   const { properties } = usePropertyStore();
@@ -109,30 +132,23 @@ export default function PropertyDetail({ id }: Props) {
   const [unlocked, setUnlocked] = useState(false);
 
   useEffect(() => {
-    const local = properties.find((p) => p.id === id);
-    if (local) {
-      setProperty(local);
-      setUnlocked(isUnlocked(id));
-      return;
-    }
+    // Always fetch from API to get the freshest data including owner info
     api.get(`/api/properties/${id}`)
       .then((data) => { setProperty(data as Property); setUnlocked(isUnlocked(id)); })
-      .catch(() => setNotFound(true));
-  }, [id, properties, isUnlocked]);
+      .catch(() => {
+        // Fall back to local store
+        const local = properties.find((p) => p.id === id);
+        if (local) { setProperty(local); setUnlocked(isUnlocked(id)); }
+        else setNotFound(true);
+      });
+  }, [id, isUnlocked]); // eslint-disable-line react-hooks/exhaustive-deps
 
   if (notFound) {
     return (
       <div className="max-w-2xl mx-auto px-4 py-24 text-center">
-        <div className="w-20 h-20 bg-gray-100 rounded-full flex items-center justify-center mx-auto mb-5">
-          <svg className="w-10 h-10 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M9.172 16.172a4 4 0 015.656 0M9 10h.01M15 10h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
-          </svg>
-        </div>
         <h1 className="text-2xl font-bold text-gray-900 mb-2">Prona nuk u gjet</h1>
         <p className="text-gray-500 mb-6">Kjo pronë nuk ekziston ose është fshirë.</p>
-        <Link href="/" className="bg-rose-500 hover:bg-rose-600 text-white font-medium px-6 py-3 rounded-xl transition-colors">
-          Kthehu në kryefaqe
-        </Link>
+        <Link href="/" className="bg-rose-500 hover:bg-rose-600 text-white font-medium px-6 py-3 rounded-xl">Kthehu në kryefaqe</Link>
       </div>
     );
   }
@@ -147,28 +163,24 @@ export default function PropertyDetail({ id }: Props) {
     );
   }
 
-  const owner = (property as Property & { owner?: { id: string; name: string; email: string } }).owner ?? null;
+  const owner  = (property as Property & { owner?: OwnerType }).owner ?? null;
   const isOwner = currentUser?.id === property.userId;
-  const images = property.images ?? [];
-  const extras = property.extras ?? [];
+  const images   = property.images    ?? [];
+  const extras   = property.extras    ?? [];
   const furnishing = property.furnishing ?? [];
-  const heating = property.heating ?? [];
+  const heating  = property.heating   ?? [];
+
+  const categoryLabel   = property.category   ? (CATEGORY_LABELS[property.category]   ?? property.category)   : null;
+  const orientationLabel = property.orientation ? (ORIENTATION_LABELS[property.orientation] ?? property.orientation) : null;
+  const listingBadge = property.listingType === 'rent' ? { label: 'Qira', cls: 'bg-blue-500' } : { label: 'Shitje', cls: 'bg-rose-500' };
 
   return (
     <>
-      {lightboxOpen && (
-        <Lightbox
-          images={images}
-          startIdx={activeImage}
-          onClose={() => setLightboxOpen(false)}
-        />
-      )}
+      {lightboxOpen && <Lightbox images={images} startIdx={activeImage} onClose={() => setLightboxOpen(false)} />}
 
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-        <button
-          onClick={() => router.back()}
-          className="flex items-center gap-2 text-gray-500 hover:text-gray-900 text-sm mb-6 transition-colors group"
-        >
+        {/* Back */}
+        <button onClick={() => router.back()} className="flex items-center gap-2 text-gray-500 hover:text-gray-900 text-sm mb-6 group">
           <svg className="w-4 h-4 group-hover:-translate-x-0.5 transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
           </svg>
@@ -176,59 +188,53 @@ export default function PropertyDetail({ id }: Props) {
         </button>
 
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-          <div className="lg:col-span-2">
-            {/* Main image — click to open lightbox */}
-            <div
-              className="relative rounded-2xl overflow-hidden bg-gray-100 aspect-[16/9] mb-3 cursor-zoom-in group"
-              onClick={() => setLightboxOpen(true)}
-            >
-              <img
-                src={images[activeImage] || 'https://images.unsplash.com/photo-1560448204-e02f11c3d0e2?w=800&q=80'}
-                alt={property.title}
-                className="w-full h-full object-cover transition-transform group-hover:scale-[1.02] duration-300"
-              />
-              <div className="absolute top-4 left-4">
-                <span className={`text-xs font-semibold px-3 py-1.5 rounded-full ${propertyTypeColor(property.type)}`}>
-                  {propertyTypeLabel(property.type)}
-                </span>
+
+          {/* ── Left column ────────────────────────────────────────── */}
+          <div className="lg:col-span-2 space-y-6">
+
+            {/* Gallery */}
+            <div>
+              <div className="relative rounded-2xl overflow-hidden bg-gray-100 aspect-[16/9] cursor-zoom-in group" onClick={() => setLightboxOpen(true)}>
+                <img
+                  src={images[activeImage] || 'https://images.unsplash.com/photo-1560448204-e02f11c3d0e2?w=800&q=80'}
+                  alt={property.title}
+                  className="w-full h-full object-cover group-hover:scale-[1.02] transition-transform duration-300"
+                />
+                {/* Badges */}
+                <div className="absolute top-4 left-4 flex gap-2">
+                  <span className={`${listingBadge.cls} text-white text-xs font-bold px-3 py-1.5 rounded-full shadow`}>{listingBadge.label}</span>
+                  {categoryLabel && (
+                    <span className="bg-black/60 text-white text-xs font-medium px-3 py-1.5 rounded-full backdrop-blur-sm">{categoryLabel}</span>
+                  )}
+                </div>
+                {images.length > 1 && (
+                  <div className="absolute top-4 right-4 bg-black/50 text-white text-xs font-medium px-2.5 py-1 rounded-full">
+                    {activeImage + 1} / {images.length}
+                  </div>
+                )}
+                <div className="absolute bottom-4 right-4 bg-black/50 text-white text-xs px-2.5 py-1.5 rounded-lg flex items-center gap-1.5 opacity-0 group-hover:opacity-100 transition-opacity">
+                  <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 8V4m0 0h4M4 4l5 5m11-1V4m0 0h-4m4 0l-5 5M4 16v4m0 0h4m-4 0l5-5m11 5l-5-5m5 5v-4m0 4h-4" /></svg>
+                  Zgjero
+                </div>
               </div>
-              {/* Expand hint */}
-              <div className="absolute bottom-4 right-4 bg-black/50 text-white text-xs px-2.5 py-1.5 rounded-lg flex items-center gap-1.5 opacity-0 group-hover:opacity-100 transition-opacity">
-                <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 8V4m0 0h4M4 4l5 5m11-1V4m0 0h-4m4 0l-5 5M4 16v4m0 0h4m-4 0l5-5m11 5l-5-5m5 5v-4m0 4h-4" />
-                </svg>
-                Zgjero
-              </div>
-              {/* Image counter */}
               {images.length > 1 && (
-                <div className="absolute top-4 right-4 bg-black/50 text-white text-xs font-medium px-2.5 py-1 rounded-full">
-                  {activeImage + 1} / {images.length}
+                <div className="flex gap-2 mt-2 overflow-x-auto pb-1">
+                  {images.map((img, idx) => (
+                    <button key={idx} onClick={() => setActiveImage(idx)}
+                      className={`w-20 h-14 rounded-xl overflow-hidden flex-shrink-0 border-2 transition-all ${activeImage === idx ? 'border-rose-500' : 'border-transparent opacity-60 hover:opacity-100'}`}
+                    >
+                      <img src={img} alt="" className="w-full h-full object-cover" />
+                    </button>
+                  ))}
                 </div>
               )}
             </div>
 
-            {/* Thumbnails */}
-            {images.length > 1 && (
-              <div className="flex gap-2 mb-6 overflow-x-auto pb-1">
-                {images.map((img, idx) => (
-                  <button
-                    key={idx}
-                    onClick={() => setActiveImage(idx)}
-                    className={`w-20 h-14 rounded-xl overflow-hidden flex-shrink-0 border-2 transition-all ${
-                      activeImage === idx ? 'border-rose-500' : 'border-transparent opacity-60 hover:opacity-100'
-                    }`}
-                  >
-                    <img src={img} alt="" className="w-full h-full object-cover" />
-                  </button>
-                ))}
-              </div>
-            )}
-
-            {/* Title */}
-            <div className="mb-6">
+            {/* Title + location */}
+            <div>
               <h1 className="text-2xl sm:text-3xl font-bold text-gray-900 mb-2">{property.title}</h1>
-              <div className="flex items-center gap-2 text-gray-500 text-sm">
-                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <div className="flex flex-wrap items-center gap-2 text-gray-500 text-sm">
+                <svg className="w-4 h-4 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" />
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" />
                 </svg>
@@ -238,70 +244,111 @@ export default function PropertyDetail({ id }: Props) {
               </div>
             </div>
 
-            {/* Stats grid */}
-            <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 mb-8">
+            {/* Quick stats */}
+            <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
               {[
-                { value: property.size, label: 'm² total' },
-                { value: property.pricePerSqm.toLocaleString(), label: '€ / m²' },
-                { value: propertyTypeLabel(property.type), label: 'Lloji' },
-                { value: property.hasBalcony ? '✓' : '✗', label: 'Ballkon' },
+                { value: `${property.size} m²`,        label: 'Sipërfaqja' },
+                { value: `€${property.pricePerSqm.toLocaleString()}`, label: '/ m²' },
+                { value: property.bedrooms ?? '—',     label: 'Dhoma gjumi' },
+                { value: property.bathrooms ?? '—',    label: 'Banjo' },
               ].map(({ value, label }) => (
                 <div key={label} className="bg-gray-50 rounded-2xl p-4 text-center">
-                  <p className="text-2xl font-bold text-gray-900">{value}</p>
+                  <p className="text-xl font-bold text-gray-900">{value}</p>
                   <p className="text-xs text-gray-500 mt-0.5">{label}</p>
                 </div>
               ))}
             </div>
 
             {/* Description */}
-            <div>
-              <h2 className="text-lg font-bold text-gray-900 mb-3">Rreth kësaj prone</h2>
-              <p className="text-gray-600 leading-relaxed text-sm">{property.description}</p>
+            <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-6">
+              <h2 className="text-base font-bold text-gray-900 mb-3">Rreth kësaj prone</h2>
+              <p className="text-gray-600 leading-relaxed text-sm whitespace-pre-line">{property.description}</p>
             </div>
+
+            {/* Full details */}
+            <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-6">
+              <h2 className="text-base font-bold text-gray-900 mb-4">Të dhënat e pronës</h2>
+              <div className="divide-y divide-gray-50">
+                <DetailRow label="Lloji i listimit"  value={property.listingType === 'rent' ? '🔑 Qira' : '🏷️ Shitje'} />
+                <DetailRow label="Kategoria"         value={categoryLabel} />
+                <DetailRow label="Qyteti"            value={property.city} />
+                <DetailRow label="Lagja"             value={property.neighborhood} />
+                <DetailRow label="Sipërfaqja"        value={`${property.size} m²`} />
+                <DetailRow label="Çmimi total"       value={formatPrice(property.totalPrice)} />
+                <DetailRow label="Çmimi / m²"        value={formatPricePerSqm(property.pricePerSqm)} />
+                <DetailRow label="Dhoma gjumi"       value={property.bedrooms} />
+                <DetailRow label="Banjo"             value={property.bathrooms} />
+                {property.floor != null && <DetailRow label="Kati"    value={property.floor === 0 ? 'Përdhesë' : `Kati ${property.floor}`} />}
+                <DetailRow label="Ballkon"           value={property.hasBalcony ? 'Po ✓' : 'Jo'} />
+                {orientationLabel && <DetailRow label="Orientimi" value={orientationLabel} />}
+              </div>
+            </div>
+
+            {/* Furnishing / Heating / Extras */}
+            {(furnishing.length > 0 || heating.length > 0 || extras.length > 0) && (
+              <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-6 space-y-5">
+                <h2 className="text-base font-bold text-gray-900">Veçoritë</h2>
+                {furnishing.length > 0 && (
+                  <div>
+                    <p className="text-xs font-semibold text-gray-500 uppercase tracking-wide mb-2">Mobilimi</p>
+                    <TagList items={furnishing} labels={FURNISHING_LABELS} />
+                  </div>
+                )}
+                {heating.length > 0 && (
+                  <div>
+                    <p className="text-xs font-semibold text-gray-500 uppercase tracking-wide mb-2">Sistemi i ngrohjes</p>
+                    <TagList items={heating} labels={HEATING_LABELS} />
+                  </div>
+                )}
+                {extras.length > 0 && (
+                  <div>
+                    <p className="text-xs font-semibold text-gray-500 uppercase tracking-wide mb-2">Të tjera</p>
+                    <TagList items={extras} labels={EXTRA_LABELS} />
+                  </div>
+                )}
+              </div>
+            )}
           </div>
 
-          {/* ── Sidebar ── */}
+          {/* ── Sidebar ───────────────────────────────────────────── */}
           <div className="lg:col-span-1">
-            <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-6 sticky top-20">
-              <div className="mb-5">
+            <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-6 sticky top-20 space-y-5">
+              {/* Price */}
+              <div>
                 <p className="text-3xl font-bold text-gray-900">{formatPrice(property.totalPrice)}</p>
                 <p className="text-sm text-gray-500 mt-0.5">{formatPricePerSqm(property.pricePerSqm)}</p>
               </div>
 
-              <div className="space-y-3 mb-6">
-                {[
-                  { label: 'Sipërfaqja', value: `${property.size} m²` },
-                  { label: 'Qyteti',     value: property.city },
-                  { label: 'Lagja',      value: property.neighborhood },
-                  { label: 'Lloji',      value: propertyTypeLabel(property.type) },
-                  { label: 'Ballkon',    value: property.hasBalcony ? 'Po' : 'Jo' },
-                ].map(({ label, value }) => (
-                  <div key={label} className="flex justify-between text-sm">
-                    <span className="text-gray-500">{label}</span>
-                    <span className="font-medium text-gray-900">{value}</span>
-                  </div>
-                ))}
+              {/* Key facts */}
+              <div className="space-y-2 text-sm border-t border-gray-100 pt-4">
+                <DetailRow label="Sipërfaqja" value={`${property.size} m²`} />
+                <DetailRow label="Dhoma gjumi" value={property.bedrooms} />
+                <DetailRow label="Banjo"       value={property.bathrooms} />
+                {property.floor != null && <DetailRow label="Kati" value={property.floor === 0 ? 'Përdhesë' : `Kati ${property.floor}`} />}
+                <DetailRow label="Ballkon"     value={property.hasBalcony ? 'Po' : 'Jo'} />
+                <DetailRow label="Kategoria"   value={categoryLabel} />
               </div>
 
+              {/* Owner */}
               {owner && !isOwner && (
-                <div className="border-t border-gray-100 pt-5 mb-5">
-                  <p className="text-xs font-medium text-gray-500 mb-3">Shitësi</p>
-                  <div className="flex items-center gap-3">
-                    <div className="w-10 h-10 rounded-full bg-rose-100 flex items-center justify-center text-rose-600 font-semibold">
+                <div className="border-t border-gray-100 pt-4">
+                  <p className="text-xs font-semibold text-gray-500 mb-3">Shitësi / Qiradhënësi</p>
+                  <div className="flex items-center gap-3 mb-4">
+                    <div className="w-10 h-10 rounded-full bg-rose-100 flex items-center justify-center text-rose-600 font-semibold flex-shrink-0">
                       {owner.name?.charAt(0).toUpperCase()}
                     </div>
-                    <div>
-                      <p className="text-sm font-semibold text-gray-900">{owner.name}</p>
-                      <p className="text-xs text-gray-500">{owner.email}</p>
+                    <div className="min-w-0">
+                      <p className="text-sm font-semibold text-gray-900 truncate">{owner.name}</p>
+                      {owner.phone && <p className="text-xs text-gray-500">{owner.phone}</p>}
                     </div>
                   </div>
                 </div>
               )}
 
+              {/* CTA */}
               {isOwner ? (
-                <Link
-                  href="/my-properties"
-                  className="w-full flex items-center justify-center gap-2 bg-rose-500 hover:bg-rose-600 text-white font-semibold py-3.5 rounded-xl transition-colors text-sm"
+                <Link href="/my-properties"
+                  className="w-full flex items-center justify-center gap-2 bg-rose-500 hover:bg-rose-600 text-white font-semibold py-3.5 rounded-xl text-sm"
                 >
                   <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
@@ -309,31 +356,23 @@ export default function PropertyDetail({ id }: Props) {
                   Edito pronën
                 </Link>
               ) : (
-                <>
-                  <button className="w-full bg-rose-500 hover:bg-rose-600 text-white font-semibold py-3.5 rounded-xl transition-colors text-sm mb-2">
-                    Kontakto shitësin
-                  </button>
-                  <button className="w-full bg-gray-50 hover:bg-gray-100 text-gray-700 font-medium py-3 rounded-xl transition-colors text-sm flex items-center justify-center gap-2">
-                    <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z" />
-                    </svg>
-                    Shto te preferencat
-                  </button>
-                </>
+                <button className="w-full bg-rose-500 hover:bg-rose-600 text-white font-semibold py-3.5 rounded-xl text-sm">
+                  Kontakto shitësin
+                </button>
               )}
             </div>
           </div>
         </div>
 
-        {/* Insights — only for non-owners */}
+        {/* ── Analysis (credits) — only non-owners ────────────────── */}
         {!isOwner && (
-          unlocked ? (
-            <PropertyInsights property={property} allProperties={properties} />
-          ) : (
-            <div className="mt-8">
+          <div className="mt-10">
+            {unlocked ? (
+              <PropertyInsights property={property} allProperties={properties} />
+            ) : (
               <InsightsPaywall propertyId={property.id} onUnlocked={() => setUnlocked(true)} />
-            </div>
-          )
+            )}
+          </div>
         )}
       </div>
     </>
