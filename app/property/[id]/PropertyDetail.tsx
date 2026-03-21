@@ -33,6 +33,10 @@ const EXTRA_LABELS: Record<string, string> = {
   elevator: 'Ashensor', garage: 'Garazh', parking: 'Parking',
   air_conditioning: 'Klimë', tv: 'TV', internet: 'Internet', storage: 'Depo',
 };
+const EXTRA_ICONS: Record<string, string> = {
+  elevator: '🛗', garage: '🚗', parking: '🅿️',
+  air_conditioning: '❄️', tv: '📺', internet: '🌐', storage: '📦',
+};
 
 // ─── Lightbox ─────────────────────────────────────────────────────────────────
 
@@ -89,7 +93,29 @@ function Lightbox({ images, startIdx, onClose }: { images: string[]; startIdx: n
   );
 }
 
-// ─── Detail row ───────────────────────────────────────────────────────────────
+// ─── Spec card ────────────────────────────────────────────────────────────────
+
+const ACCENT_CLASSES: Record<string, string> = {
+  rose: 'bg-rose-50 border-rose-100 text-rose-600',
+  blue: 'bg-blue-50 border-blue-100 text-blue-600',
+  gray: 'bg-gray-50 border-gray-100 text-gray-700',
+};
+
+function SpecCard({ icon, label, value, accent = 'gray' }: {
+  icon: string; label: string; value: string | number; accent?: 'rose' | 'blue' | 'gray';
+}) {
+  return (
+    <div className={`flex items-center gap-3 rounded-xl border p-3.5 ${ACCENT_CLASSES[accent]}`}>
+      <span className="text-2xl leading-none flex-shrink-0">{icon}</span>
+      <div className="min-w-0">
+        <p className="text-[10px] font-bold uppercase tracking-wide opacity-60 leading-none mb-0.5">{label}</p>
+        <p className="text-sm font-semibold truncate">{value}</p>
+      </div>
+    </div>
+  );
+}
+
+// ─── Simple sidebar row ───────────────────────────────────────────────────────
 
 function DetailRow({ label, value }: { label: string; value: React.ReactNode }) {
   if (!value && value !== 0) return null;
@@ -97,19 +123,6 @@ function DetailRow({ label, value }: { label: string; value: React.ReactNode }) 
     <div className="flex justify-between items-start py-2.5 border-b border-gray-50 last:border-0 text-sm">
       <span className="text-gray-500 flex-shrink-0 mr-4">{label}</span>
       <span className="font-medium text-gray-900 text-right">{value}</span>
-    </div>
-  );
-}
-
-function TagList({ items, labels }: { items: string[]; labels: Record<string, string> }) {
-  if (!items || items.length === 0) return <span className="text-gray-400 text-sm">—</span>;
-  return (
-    <div className="flex flex-wrap gap-1.5">
-      {items.map((v) => (
-        <span key={v} className="bg-gray-100 text-gray-700 text-xs font-medium px-2.5 py-1 rounded-full">
-          {labels[v] ?? v}
-        </span>
-      ))}
     </div>
   );
 }
@@ -266,45 +279,63 @@ export default function PropertyDetail({ id }: Props) {
               <p className="text-gray-600 leading-relaxed text-sm whitespace-pre-line">{property.description}</p>
             </div>
 
-            {/* Full details */}
+            {/* Full details — icon grid */}
             <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-6">
-              <h2 className="text-base font-bold text-gray-900 mb-4">Të dhënat e pronës</h2>
-              <div className="divide-y divide-gray-50">
-                <DetailRow label="Lloji i listimit"  value={property.listingType === 'rent' ? '🔑 Qira' : '🏷️ Shitje'} />
-                <DetailRow label="Kategoria"         value={categoryLabel} />
-                <DetailRow label="Qyteti"            value={property.city} />
-                <DetailRow label="Lagja"             value={property.neighborhood} />
-                <DetailRow label="Sipërfaqja"        value={`${property.size} m²`} />
-                <DetailRow label="Çmimi total"       value={formatPrice(property.totalPrice)} />
-                <DetailRow label="Çmimi / m²"        value={formatPricePerSqm(property.pricePerSqm)} />
-                <DetailRow label="Dhoma gjumi"       value={property.bedrooms} />
-                <DetailRow label="Banjo"             value={property.bathrooms} />
-                {property.floor != null && <DetailRow label="Kati"    value={property.floor === 0 ? 'Përdhesë' : `Kati ${property.floor}`} />}
-                <DetailRow label="Ballkon"           value={property.hasBalcony ? 'Po ✓' : 'Jo'} />
-                {orientationLabel && <DetailRow label="Orientimi" value={orientationLabel} />}
+              <h2 className="text-base font-bold text-gray-900 mb-5">Të dhënat e pronës</h2>
+              <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
+                <SpecCard icon="🏷️" label="Listimi"    value={property.listingType === 'rent' ? 'Qira' : 'Shitje'} accent={property.listingType === 'rent' ? 'blue' : 'rose'} />
+                {categoryLabel && <SpecCard icon="🏠" label="Kategoria"  value={categoryLabel} />}
+                <SpecCard icon="📐" label="Sipërfaqja" value={`${property.size} m²`} />
+                <SpecCard icon="💰" label="Çmimi total" value={formatPrice(property.totalPrice)} />
+                <SpecCard icon="📊" label="Çmimi / m²" value={formatPricePerSqm(property.pricePerSqm)} />
+                {(property.bedrooms ?? 0) > 0 && <SpecCard icon="🛏️" label="Dhoma gjumi" value={String(property.bedrooms)} />}
+                {(property.bathrooms ?? 0) > 0 && <SpecCard icon="🚿" label="Banjo"       value={String(property.bathrooms)} />}
+                {property.floor != null && <SpecCard icon="🏗️" label="Kati" value={property.floor === 0 ? 'Përdhesë' : `Kati ${property.floor}`} />}
+                <SpecCard icon="📍" label="Qyteti"    value={property.city} />
+                <SpecCard icon="🏘️" label="Lagja"     value={property.neighborhood} />
+                <SpecCard icon={property.hasBalcony ? '✅' : '❌'} label="Ballkon" value={property.hasBalcony ? 'Ka ballkon' : 'Pa ballkon'} />
+                {orientationLabel && <SpecCard icon="🧭" label="Orientimi" value={orientationLabel} />}
               </div>
             </div>
 
             {/* Furnishing / Heating / Extras */}
             {(furnishing.length > 0 || heating.length > 0 || extras.length > 0) && (
-              <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-6 space-y-5">
+              <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-6 space-y-6">
                 <h2 className="text-base font-bold text-gray-900">Veçoritë</h2>
                 {furnishing.length > 0 && (
                   <div>
-                    <p className="text-xs font-semibold text-gray-500 uppercase tracking-wide mb-2">Mobilimi</p>
-                    <TagList items={furnishing} labels={FURNISHING_LABELS} />
+                    <p className="text-xs font-bold text-gray-400 uppercase tracking-widest mb-3">Mobilimi</p>
+                    <div className="flex flex-wrap gap-2">
+                      {furnishing.map((v) => (
+                        <span key={v} className="inline-flex items-center gap-2 bg-violet-50 border border-violet-100 text-violet-700 text-sm font-medium px-3 py-1.5 rounded-full">
+                          🛋️ {FURNISHING_LABELS[v] ?? v}
+                        </span>
+                      ))}
+                    </div>
                   </div>
                 )}
                 {heating.length > 0 && (
                   <div>
-                    <p className="text-xs font-semibold text-gray-500 uppercase tracking-wide mb-2">Sistemi i ngrohjes</p>
-                    <TagList items={heating} labels={HEATING_LABELS} />
+                    <p className="text-xs font-bold text-gray-400 uppercase tracking-widest mb-3">Sistemi i ngrohjes</p>
+                    <div className="flex flex-wrap gap-2">
+                      {heating.map((v) => (
+                        <span key={v} className="inline-flex items-center gap-2 bg-orange-50 border border-orange-100 text-orange-700 text-sm font-medium px-3 py-1.5 rounded-full">
+                          🔥 {HEATING_LABELS[v] ?? v}
+                        </span>
+                      ))}
+                    </div>
                   </div>
                 )}
                 {extras.length > 0 && (
                   <div>
-                    <p className="text-xs font-semibold text-gray-500 uppercase tracking-wide mb-2">Të tjera</p>
-                    <TagList items={extras} labels={EXTRA_LABELS} />
+                    <p className="text-xs font-bold text-gray-400 uppercase tracking-widest mb-3">Të tjera</p>
+                    <div className="flex flex-wrap gap-2">
+                      {extras.map((v) => (
+                        <span key={v} className="inline-flex items-center gap-2 bg-emerald-50 border border-emerald-100 text-emerald-700 text-sm font-medium px-3 py-1.5 rounded-full">
+                          {EXTRA_ICONS[v] ?? '✨'} {EXTRA_LABELS[v] ?? v}
+                        </span>
+                      ))}
+                    </div>
                   </div>
                 )}
               </div>
