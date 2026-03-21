@@ -19,6 +19,10 @@ const nextConfig = {
         source: '/api/:path*',
         destination: 'http://165.22.70.65:4000/api/:path*',
       },
+      {
+        source: '/health',
+        destination: 'http://165.22.70.65:4000/health',
+      },
     ];
   },
 };

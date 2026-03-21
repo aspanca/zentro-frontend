@@ -7,7 +7,7 @@ export default function ApiStatus() {
   const [message, setMessage] = useState('');
 
   useEffect(() => {
-    fetch(`${process.env.NEXT_PUBLIC_API_URL}/`)
+    fetch(`${process.env.NEXT_PUBLIC_API_URL || ''}/health`)
       .then((r) => r.json())
       .then((d) => { setStatus('ok'); setMessage(d.message ?? 'Connected'); })
       .catch(() => { setStatus('error'); setMessage('Cannot reach API'); });
