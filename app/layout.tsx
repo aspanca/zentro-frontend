@@ -1,7 +1,7 @@
 import type { Metadata } from 'next';
 import { Inter } from 'next/font/google';
 import './globals.css';
-import Navbar from '@/components/Navbar';
+import ConditionalNavbar from '@/components/ConditionalNavbar';
 import CompareBar from '@/components/CompareBar';
 
 const inter = Inter({ subsets: ['latin'] });
@@ -29,7 +29,7 @@ export default function RootLayout({
   return (
     <html lang="sq">
       <body className={`${inter.className} bg-gray-50 min-h-screen`}>
-        <Navbar />
+        <ConditionalNavbar />
         <main>{children}</main>
         <CompareBar />
         <footer className="border-t border-gray-100 bg-white mt-16">

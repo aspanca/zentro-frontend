@@ -12,6 +12,7 @@ interface Stats {
   cities: number;
   heatingOptions: number;
   amenities: number;
+  zones: number;
 }
 
 const STAT_CARDS = (s: Stats) => [
@@ -54,6 +55,14 @@ const STAT_CARDS = (s: Stats) => [
     href: '/admin/amenities',
     color: 'from-purple-500/20 to-purple-500/5 border-purple-500/20',
     text: 'text-purple-400',
+  },
+  {
+    label: 'Zona hartë',
+    value: s.zones ?? 0,
+    icon: '🗺️',
+    href: '/admin/zones',
+    color: 'from-indigo-500/20 to-indigo-500/5 border-indigo-500/20',
+    text: 'text-indigo-400',
   },
 ];
 

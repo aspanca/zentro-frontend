@@ -9,8 +9,9 @@ const API = process.env.NEXT_PUBLIC_API_URL ?? '';
 interface Item { id: number; name: string; slug: string; icon: string; isActive: boolean }
 interface Props {
   title: string;
-  endpoint: string;     // e.g. /api/admin/cities
+  endpoint: string;
   defaultIcon: string;
+  hideIcon?: boolean;
 }
 
 function toSlug(s: string) {
@@ -19,7 +20,7 @@ function toSlug(s: string) {
     .replace(/[^a-z0-9]+/g, '_').replace(/^_+|_+$/g, '');
 }
 
-export default function RefDataManager({ title, endpoint, defaultIcon }: Props) {
+export default function RefDataManager({ title, endpoint, defaultIcon, hideIcon = false }: Props) {
   const { adminToken } = useAdminStore();
   const [items, setItems]       = useState<Item[]>([]);
   const [loading, setLoading]   = useState(true);
@@ -131,7 +132,7 @@ export default function RefDataManager({ title, endpoint, defaultIcon }: Props) 
           <table className="w-full text-sm">
             <thead>
               <tr className="border-b border-gray-800">
-                <th className="text-left text-gray-500 font-medium px-6 py-4">Ikona</th>
+                {!hideIcon && <th className="text-left text-gray-500 font-medium px-6 py-4">Ikona</th>}
                 <th className="text-left text-gray-500 font-medium px-6 py-4">Emri</th>
                 <th className="text-left text-gray-500 font-medium px-6 py-4 hidden sm:table-cell">Slug</th>
                 <th className="text-left text-gray-500 font-medium px-6 py-4 hidden md:table-cell">Statusi</th>
@@ -141,9 +142,7 @@ export default function RefDataManager({ title, endpoint, defaultIcon }: Props) 
             <tbody>
               {items.map((item, i) => (
                 <tr key={item.id} className={`border-b border-gray-800 last:border-0 ${i % 2 === 0 ? '' : 'bg-gray-800/30'}`}>
-                  <td className="px-6 py-3">
-                    <span className="text-2xl">{item.icon}</span>
-                  </td>
+                  {!hideIcon && <td className="px-6 py-3"><span className="text-2xl">{item.icon}</span></td>}
                   <td className="px-6 py-3 text-white font-medium">{item.name}</td>
                   <td className="px-6 py-3 text-gray-500 font-mono text-xs hidden sm:table-cell">{item.slug}</td>
                   <td className="px-6 py-3 hidden md:table-cell">
@@ -203,10 +202,12 @@ export default function RefDataManager({ title, endpoint, defaultIcon }: Props) 
               {error && <p className="text-red-400 text-sm bg-red-500/10 border border-red-500/20 rounded-xl px-4 py-3">{error}</p>}
 
               {/* Icon picker */}
-              <div>
-                <label className="block text-sm font-medium text-gray-400 mb-2">Ikona</label>
-                <IconPicker value={form.icon} onChange={(icon) => setForm((f) => ({ ...f, icon }))} />
-              </div>
+              {!hideIcon && (
+                <div>
+                  <label className="block text-sm font-medium text-gray-400 mb-2">Ikona</label>
+                  <IconPicker value={form.icon} onChange={(icon) => setForm((f) => ({ ...f, icon }))} />
+                </div>
+              )}
 
               {/* Name */}
               <div>
