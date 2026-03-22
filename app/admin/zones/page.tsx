@@ -364,7 +364,7 @@ export default function ZonesPage() {
                     {z.description && (
                       <p className="text-gray-500 text-xs mt-1 line-clamp-2">{z.description}</p>
                     )}
-                    {z.metadata?.avgPrice && (
+                    {z.metadata?.avgPrice != null && (
                       <p className="text-blue-400 text-xs mt-0.5 font-semibold">€{String(z.metadata.avgPrice)}/m²</p>
                     )}
                   </div>

@@ -230,7 +230,7 @@ export default function ZoneMap({
             <Tooltip sticky>
               <span className="font-semibold text-xs">{TYPE_DEFAULTS[z.type].icon} {z.name}</span>
               {z.description && <div className="text-xs text-gray-500 mt-0.5">{z.description}</div>}
-              {z.metadata?.avgPrice && <div className="text-xs font-bold text-blue-600 mt-0.5">€{String(z.metadata.avgPrice)}/m²</div>}
+              {z.metadata?.avgPrice != null && <div className="text-xs font-bold text-blue-600 mt-0.5">€{String(z.metadata.avgPrice)}/m²</div>}
             </Tooltip>
           </Polygon>
         ))}

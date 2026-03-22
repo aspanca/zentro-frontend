@@ -430,8 +430,8 @@ export default function PropertyDetail({ id }: Props) {
           </div>
         </div>
 
-        {/* ── Analysis (credits) — only non-owners ────────────────── */}
-        {!isOwner && (
+        {/* ── Analysis (credits) — only logged-in non-owners ─────── */}
+        {currentUser && !isOwner && (
           <div className="mt-10">
             {unlocked ? (
               <PropertyInsights property={property} allProperties={properties} />

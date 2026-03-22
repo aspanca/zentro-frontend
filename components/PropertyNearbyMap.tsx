@@ -4,8 +4,6 @@ import { useEffect, useRef, useState } from 'react';
 import L from 'leaflet';
 import 'leaflet/dist/leaflet.css';
 
-// ─── Types ────────────────────────────────────────────────────────────────────
-
 interface POIItem {
   name: string;
   distance: number;
@@ -31,8 +29,6 @@ interface NearbyResponse {
   categories: Record<string, CategoryResult>;
 }
 
-// ─── Constants ────────────────────────────────────────────────────────────────
-
 const CAT_COLORS: Record<string, string> = {
   pharmacy:        '#10b981',
   supermarket:     '#f59e0b',
@@ -55,8 +51,6 @@ function distColor(m: number) {
   return          { text: '#dc2626', bg: '#fef2f2', border: '#fecaca' };
 }
 
-// ─── Leaflet icon helpers ─────────────────────────────────────────────────────
-
 function pinIcon(): L.DivIcon {
   return L.divIcon({
     className: '',
@@ -77,8 +71,6 @@ function poiIcon(emoji: string, color: string, nearest: boolean): L.DivIcon {
     html: `<div style="width:${s}px;height:${s}px;background:${color};border-radius:50%;border:${nearest ? '2px solid #fff' : '1.5px solid rgba(255,255,255,.5)'};box-shadow:${nearest ? `0 0 0 2px ${color}55,0 2px 8px rgba(0,0,0,.4)` : '0 1px 4px rgba(0,0,0,.35)'};display:flex;align-items:center;justify-content:center;font-size:${nearest ? 14 : 10}px">${emoji}</div>`,
   });
 }
-
-// ─── Leaflet map (client-only) ────────────────────────────────────────────────
 
 function LeafletMap({ lat, lng, result, activeKeys }: { lat: number; lng: number; result: NearbyResponse | null; activeKeys: Set<string> }) {
   const containerRef = useRef<HTMLDivElement>(null);
@@ -117,8 +109,6 @@ function LeafletMap({ lat, lng, result, activeKeys }: { lat: number; lng: number
   return <div ref={containerRef} style={{ width: '100%', height: '100%' }} />;
 }
 
-// ─── Category card (right panel) ─────────────────────────────────────────────
-
 function CategoryCard({ catKey, cat, active, onToggle }: {
   catKey: string; cat: CategoryResult; active: boolean; onToggle: () => void;
 }) {
@@ -129,7 +119,6 @@ function CategoryCard({ catKey, cat, active, onToggle }: {
 
   return (
     <div className={`rounded-xl border transition-all overflow-hidden ${active ? 'border-gray-200 bg-white shadow-sm' : 'border-gray-100 bg-gray-50 opacity-60'}`}>
-      {/* Header row */}
       <button
         className="w-full flex items-center gap-3 px-4 py-3 text-left"
         onClick={onToggle}
@@ -144,7 +133,7 @@ function CategoryCard({ catKey, cat, active, onToggle }: {
           <p className="text-sm font-semibold text-gray-900 truncate">{cat.label}</p>
           {nearest && dc && (
             <p className="text-xs font-medium mt-0.5" style={{ color: dc.text }}>
-              {distLabel(nearest.distance)} · {cat.mode === 'walk' ? `🚶 ${nearest.walkMinutes} min` : `🚗 ${nearest.driveMinutes} min`}
+              {nearest.name}
             </p>
           )}
         </div>
@@ -166,15 +155,7 @@ function CategoryCard({ catKey, cat, active, onToggle }: {
         </div>
       </button>
 
-      {/* Nearest item name */}
-      {nearest && active && (
-        <div className="px-4 pb-2 -mt-1">
-          <p className="text-xs text-gray-500 truncate">★ {nearest.name}</p>
-        </div>
-      )}
-
-      {/* Expanded list */}
-      {expanded && active && cat.items.length > 1 && (
+      {expanded && active && cat.items.length > 0 && (
         <div className="border-t border-gray-100 divide-y divide-gray-50">
           {cat.items.slice(0, 8).map((poi, i) => {
             const pdc = distColor(poi.distance);
@@ -193,7 +174,6 @@ function CategoryCard({ catKey, cat, active, onToggle }: {
         </div>
       )}
 
-      {/* Expand toggle */}
       {active && cat.items.length > 1 && (
         <button
           onClick={(e) => { e.stopPropagation(); setExpanded((v) => !v); }}
@@ -206,8 +186,6 @@ function CategoryCard({ catKey, cat, active, onToggle }: {
   );
 }
 
-// ─── Main component ───────────────────────────────────────────────────────────
-
 interface Props { lat: number; lng: number; propertyTitle: string }
 
 export default function PropertyNearbyMap({ lat, lng }: Props) {
@@ -215,6 +193,7 @@ export default function PropertyNearbyMap({ lat, lng }: Props) {
   const [loading, setLoading]     = useState(true);
   const [error, setError]         = useState<string | null>(null);
   const [activeKeys, setActiveKeys] = useState<Set<string>>(new Set(Object.keys(CAT_COLORS)));
+  const [panelOpen, setPanelOpen] = useState(false);
 
   useEffect(() => {
     let cancelled = false;
@@ -251,11 +230,25 @@ export default function PropertyNearbyMap({ lat, lng }: Props) {
           </h3>
           <p className="text-xs text-gray-400 mt-0.5">Kliko markerat · OpenStreetMap</p>
         </div>
-        {result && (
-          <span className="bg-emerald-50 text-emerald-700 border border-emerald-200 text-xs font-bold px-3 py-1 rounded-full">
-            {totalFound} vende
-          </span>
-        )}
+        <div className="flex items-center gap-2">
+          {result && (
+            <span className="bg-emerald-50 text-emerald-700 border border-emerald-200 text-xs font-bold px-3 py-1 rounded-full">
+              {totalFound} vende
+            </span>
+          )}
+          {/* Mobile toggle for category panel */}
+          {result && (
+            <button
+              onClick={() => setPanelOpen(true)}
+              className="lg:hidden flex items-center gap-1.5 bg-gray-100 hover:bg-gray-200 text-gray-700 text-xs font-semibold px-3 py-1.5 rounded-full transition-colors"
+            >
+              <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 10h16M4 14h16M4 18h16" />
+              </svg>
+              Kategoritë
+            </button>
+          )}
+        </div>
       </div>
 
       {/* Body: map + panel */}
@@ -281,10 +274,8 @@ export default function PropertyNearbyMap({ lat, lng }: Props) {
           )}
         </div>
 
-        {/* Right panel — distance legend + category list */}
-        <div className="lg:w-72 xl:w-80 border-t lg:border-t-0 lg:border-l border-gray-100 flex flex-col">
-
-          {/* Legend */}
+        {/* Desktop panel — always visible on lg+ */}
+        <div className="hidden lg:flex lg:w-72 xl:w-80 border-l border-gray-100 flex-col">
           <div className="flex items-center gap-3 px-4 py-3 border-b border-gray-100 bg-gray-50/60">
             {[['#10b981', '< 300 m'], ['#d97706', '< 700 m'], ['#dc2626', '> 700 m']].map(([color, label]) => (
               <span key={label} className="flex items-center gap-1.5 text-xs font-medium text-gray-500">
@@ -293,18 +284,10 @@ export default function PropertyNearbyMap({ lat, lng }: Props) {
               </span>
             ))}
           </div>
-
-          {/* Category cards */}
           {result ? (
             <div className="flex-1 overflow-y-auto p-3 space-y-2" style={{ maxHeight: 380 }}>
               {sortedCats.map(([key, cat]) => (
-                <CategoryCard
-                  key={key}
-                  catKey={key}
-                  cat={cat}
-                  active={activeKeys.has(key)}
-                  onToggle={() => toggle(key)}
-                />
+                <CategoryCard key={key} catKey={key} cat={cat} active={activeKeys.has(key)} onToggle={() => toggle(key)} />
               ))}
             </div>
           ) : (
@@ -314,6 +297,55 @@ export default function PropertyNearbyMap({ lat, lng }: Props) {
           )}
         </div>
       </div>
+
+      {/* Mobile bottom sheet overlay */}
+      {panelOpen && (
+        <div className="fixed inset-0 z-[9999] lg:hidden">
+          {/* Backdrop */}
+          <div className="absolute inset-0 bg-black/50 backdrop-blur-sm" onClick={() => setPanelOpen(false)} />
+
+          {/* Sheet */}
+          <div className="absolute bottom-0 left-0 right-0 bg-white rounded-t-2xl max-h-[80vh] flex flex-col animate-in slide-in-from-bottom duration-300">
+            {/* Handle + header */}
+            <div className="flex-shrink-0">
+              <div className="flex justify-center pt-3 pb-1">
+                <div className="w-10 h-1 rounded-full bg-gray-300" />
+              </div>
+              <div className="flex items-center justify-between px-5 py-3 border-b border-gray-100">
+                <div>
+                  <h3 className="font-bold text-gray-900 text-base">Shërbime afër</h3>
+                  <p className="text-xs text-gray-400 mt-0.5">{totalFound} vende brenda 1 km</p>
+                </div>
+                <button
+                  onClick={() => setPanelOpen(false)}
+                  className="w-8 h-8 rounded-full bg-gray-100 flex items-center justify-center text-gray-500 hover:bg-gray-200 transition-colors"
+                >
+                  <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                  </svg>
+                </button>
+              </div>
+
+              {/* Legend */}
+              <div className="flex items-center gap-3 px-5 py-2.5 border-b border-gray-100 bg-gray-50/60">
+                {[['#10b981', '< 300 m'], ['#d97706', '< 700 m'], ['#dc2626', '> 700 m']].map(([color, label]) => (
+                  <span key={label} className="flex items-center gap-1.5 text-xs font-medium text-gray-500">
+                    <span className="w-2.5 h-2.5 rounded-full flex-shrink-0" style={{ background: color }} />
+                    {label}
+                  </span>
+                ))}
+              </div>
+            </div>
+
+            {/* Scrollable category list */}
+            <div className="flex-1 overflow-y-auto p-4 space-y-2">
+              {sortedCats.map(([key, cat]) => (
+                <CategoryCard key={key} catKey={key} cat={cat} active={activeKeys.has(key)} onToggle={() => toggle(key)} />
+              ))}
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

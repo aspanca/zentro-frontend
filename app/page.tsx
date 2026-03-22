@@ -13,11 +13,7 @@ export default function HomePage() {
             <span className="text-rose-400">në Kosovë</span>
           </h1>
           <p className="text-gray-400 text-sm sm:text-base max-w-lg mx-auto mb-6">
-            Banesa, shtëpi dhe truall — me çmime, analiza dhe informata të detajuara.
-          </p>
-          <p className="inline-block text-sm text-gray-300 bg-white/5 border border-white/10 rounded-2xl px-5 py-3 max-w-xl mx-auto leading-relaxed">
-            😮 Prishtina është bërë si Bangladesh… e di që e ki vështirë me gjet diçka të hajrit.{' '}
-            <span className="text-rose-400 font-medium">Ne mundohemi të të ndihmojmë ta bësh zgjedhjen e duhur.</span>
+            Mundohemi të të ndihmojmë ta bësh zgjedhjen e duhur.
           </p>
           <div className="mt-4">
             <ApiStatus />
