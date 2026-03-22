@@ -7,7 +7,7 @@ import dynamic from 'next/dynamic';
 import { useAuthStore } from '@/lib/store';
 import { api } from '@/lib/api';
 import { Property, ListingType, PropertyCategory, Orientation } from '@/types';
-import { KOSOVO_CITIES } from '@/lib/mockData';
+import { useOptions } from '@/lib/useOptions';
 
 const LocationPicker = dynamic(() => import('@/components/LocationPicker'), { ssr: false });
 
@@ -26,18 +26,6 @@ const FURNISHING_OPTIONS = [
   { value: 'wc',          label: 'WC' },            { value: 'unfurnished', label: 'Pa mobilim' },
 ];
 
-const HEATING_OPTIONS = [
-  { value: 'wood', label: 'Dru' }, { value: 'pellet', label: 'Pellet' },
-  { value: 'gas',  label: 'Gaz' }, { value: 'keds',   label: 'KEDS' },
-  { value: 'termokos', label: 'Termokos' }, { value: 'oil', label: 'Mazut' },
-];
-
-const EXTRAS_OPTIONS = [
-  { value: 'elevator',         label: '🛗 Ashensor' }, { value: 'garage',   label: '🚗 Garazh' },
-  { value: 'parking',          label: '🅿️ Parking' },  { value: 'air_conditioning', label: '❄️ Klimë' },
-  { value: 'tv',               label: '📺 TV' },        { value: 'internet', label: '🌐 Internet' },
-  { value: 'storage',          label: '📦 Depo' },
-];
 
 const ORIENTATION_OPTIONS = [
   { value: 'east',  label: 'Lindje' }, { value: 'west',  label: 'Perëndim' },
@@ -82,6 +70,7 @@ function EditModal({ property, onClose, onSaved }: { property: Property; onClose
   const [saving, setSaving]             = useState(false);
   const [error, setError]               = useState('');
   const fileRef                         = useRef<HTMLInputElement>(null);
+  const { cities, heatingOptions, amenities } = useOptions();
 
   const totalPrice = size && pricePerSqm ? Number(size) * Number(pricePerSqm) : 0;
 
@@ -213,7 +202,11 @@ function EditModal({ property, onClose, onSaved }: { property: Property; onClose
               <select value={city} onChange={(e) => setCity(e.target.value)}
                 className="w-full border border-gray-200 rounded-xl px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-rose-500 bg-white"
               >
-                {KOSOVO_CITIES.map((c) => <option key={c} value={c}>{c}</option>)}
+                <option value="">— Zgjidh qytetin —</option>
+                {cities.length > 0
+                  ? cities.map((c) => <option key={c.slug} value={c.name}>{c.icon} {c.name}</option>)
+                  : <option value={city}>{city}</option>
+                }
               </select>
             </div>
             <div>
@@ -297,8 +290,8 @@ function EditModal({ property, onClose, onSaved }: { property: Property; onClose
           <div>
             <p className="text-sm font-semibold text-gray-700 mb-2">Ngrohja</p>
             <div className="flex flex-wrap gap-2">
-              {HEATING_OPTIONS.map(({ value, label }) => (
-                <Chip key={value} label={label} active={heating.includes(value)} onClick={() => toggleArr(heating, setHeating, value)} />
+              {heatingOptions.map((opt) => (
+                <Chip key={opt.slug} label={`${opt.icon} ${opt.name}`} active={heating.includes(opt.slug)} onClick={() => toggleArr(heating, setHeating, opt.slug)} />
               ))}
             </div>
           </div>
@@ -307,8 +300,8 @@ function EditModal({ property, onClose, onSaved }: { property: Property; onClose
           <div>
             <p className="text-sm font-semibold text-gray-700 mb-2">Veçori shtesë</p>
             <div className="flex flex-wrap gap-2">
-              {EXTRAS_OPTIONS.map(({ value, label }) => (
-                <Chip key={value} label={label} active={extras.includes(value)} onClick={() => toggleArr(extras, setExtras, value)} />
+              {amenities.map((opt) => (
+                <Chip key={opt.slug} label={`${opt.icon} ${opt.name}`} active={extras.includes(opt.slug)} onClick={() => toggleArr(extras, setExtras, opt.slug)} />
               ))}
             </div>
           </div>

@@ -3,7 +3,7 @@
 import { useEffect, useState } from 'react';
 import { usePropertyStore, defaultFilters } from '@/lib/store';
 import { FilterState, ListingType, PropertyCategory, Orientation } from '@/types';
-import { KOSOVO_CITIES } from '@/lib/mockData';
+import { useOptions } from '@/lib/useOptions';
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
 
@@ -86,6 +86,7 @@ interface Props { open: boolean; onClose: () => void }
 
 export default function FilterSheet({ open, onClose }: Props) {
   const { filters, setFilter, toggleArrayFilter, resetFilters } = usePropertyStore();
+  const { cities, heatingOptions, amenities } = useOptions();
 
   // Local draft — only apply on "Kërko" click
   const [draft, setDraft] = useState<FilterState>(filters);
@@ -141,24 +142,7 @@ export default function FilterSheet({ open, onClose }: Props) {
     { value: 'unfurnished', label: 'Pa mobilim' },
   ];
 
-  const HEATINGS = [
-    { value: 'wood',     label: 'Dru' },
-    { value: 'pellet',   label: 'Pellet' },
-    { value: 'gas',      label: 'Gaz' },
-    { value: 'keds',     label: 'KEDS' },
-    { value: 'termokos', label: 'Termokos' },
-    { value: 'oil',      label: 'Mazut' },
-  ];
-
-  const EXTRAS = [
-    { value: 'elevator',         label: 'Ashensor' },
-    { value: 'garage',           label: 'Garazh' },
-    { value: 'parking',          label: 'Parking' },
-    { value: 'air_conditioning', label: 'Klimë' },
-    { value: 'tv',               label: 'TV' },
-    { value: 'internet',         label: 'Internet' },
-    { value: 'storage',          label: 'Depo' },
-  ];
+  // heating + extras come from DB via useOptions()
 
   const ORIENTATIONS: { value: Orientation; label: string }[] = [
     { value: 'east',  label: 'Lindje' },
@@ -234,7 +218,7 @@ export default function FilterSheet({ open, onClose }: Props) {
                   style={{ backgroundImage: 'none' }}
                 >
                   <option value="">Të gjitha qytetet</option>
-                  {KOSOVO_CITIES.map((c) => <option key={c} value={c}>{c}</option>)}
+                  {cities.map((c) => <option key={c.slug} value={c.name}>{c.icon} {c.name}</option>)}
                 </select>
                 <svg className="absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400 pointer-events-none" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
@@ -319,36 +303,40 @@ export default function FilterSheet({ open, onClose }: Props) {
             </Section>
 
             {/* Heating */}
-            <Section title="Sistemi i ngrohjes">
-              <div className="flex flex-wrap gap-2">
-                {HEATINGS.map(({ value, label }) => (
-                  <Chip
-                    key={value} label={label}
-                    active={(draft.heating as string[]).includes(value)}
-                    onClick={() => setDraft((d) => {
-                      const cur = d.heating as string[];
-                      return { ...d, heating: cur.includes(value) ? cur.filter((v) => v !== value) : [...cur, value] };
-                    })}
-                  />
-                ))}
-              </div>
-            </Section>
+            {heatingOptions.length > 0 && (
+              <Section title="Sistemi i ngrohjes">
+                <div className="flex flex-wrap gap-2">
+                  {heatingOptions.map((opt) => (
+                    <Chip
+                      key={opt.slug} label={`${opt.icon} ${opt.name}`}
+                      active={(draft.heating as string[]).includes(opt.slug)}
+                      onClick={() => setDraft((d) => {
+                        const cur = d.heating as string[];
+                        return { ...d, heating: cur.includes(opt.slug) ? cur.filter((v) => v !== opt.slug) : [...cur, opt.slug] };
+                      })}
+                    />
+                  ))}
+                </div>
+              </Section>
+            )}
 
             {/* Extras */}
-            <Section title="Të tjera">
-              <div className="flex flex-wrap gap-2">
-                {EXTRAS.map(({ value, label }) => (
-                  <Chip
-                    key={value} label={label}
-                    active={(draft.extras as string[]).includes(value)}
-                    onClick={() => setDraft((d) => {
-                      const cur = d.extras as string[];
-                      return { ...d, extras: cur.includes(value) ? cur.filter((v) => v !== value) : [...cur, value] };
-                    })}
-                  />
-                ))}
-              </div>
-            </Section>
+            {amenities.length > 0 && (
+              <Section title="Të tjera">
+                <div className="flex flex-wrap gap-2">
+                  {amenities.map((opt) => (
+                    <Chip
+                      key={opt.slug} label={`${opt.icon} ${opt.name}`}
+                      active={(draft.extras as string[]).includes(opt.slug)}
+                      onClick={() => setDraft((d) => {
+                        const cur = d.extras as string[];
+                        return { ...d, extras: cur.includes(opt.slug) ? cur.filter((v) => v !== opt.slug) : [...cur, opt.slug] };
+                      })}
+                    />
+                  ))}
+                </div>
+              </Section>
+            )}
 
           </div>
 

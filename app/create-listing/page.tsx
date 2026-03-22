@@ -8,6 +8,7 @@ import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
 import { useAuthStore } from '@/lib/store';
 import { api } from '@/lib/api';
+import { useOptions } from '@/lib/useOptions';
 import dynamic from 'next/dynamic';
 
 const LocationPicker = dynamic(() => import('@/components/LocationPicker'), { ssr: false });
@@ -16,8 +17,6 @@ const LocationPicker = dynamic(() => import('@/components/LocationPicker'), { ss
 
 const CATEGORIES  = ['apartment', 'house', 'office', 'store', 'land', 'object', 'warehouse', 'business'] as const;
 const FURNISHINGS = ['living_room', 'kitchen', 'bathroom', 'bedroom', 'wc', 'unfurnished'] as const;
-const HEATINGS    = ['wood', 'pellet', 'gas', 'keds', 'termokos', 'oil'] as const;
-const EXTRAS_LIST = ['elevator', 'garage', 'parking', 'air_conditioning', 'tv', 'internet', 'storage'] as const;
 
 const schema = z.object({
   title:        z.string().min(3,  'Titulli duhet të ketë të paktën 3 karaktere.'),
@@ -32,9 +31,9 @@ const schema = z.object({
   bathrooms:    z.coerce.number().int().min(0).default(1),
   floor:        z.coerce.number().int().optional().or(z.literal('')).transform((v) => (v === '' ? null : v)),
   orientation:  z.enum(['east', 'west', 'north', 'south']).optional().or(z.literal('')).transform((v) => v || null),
-  furnishing:   z.array(z.enum(FURNISHINGS)).default([]),
-  heating:      z.array(z.enum(HEATINGS)).default([]),
-  extras:       z.array(z.enum(EXTRAS_LIST)).default([]),
+  furnishing:   z.array(z.string()).default([]),
+  heating:      z.array(z.string()).default([]),
+  extras:       z.array(z.string()).default([]),
   hasBalcony:   z.boolean().default(false),
 });
 
@@ -62,24 +61,6 @@ const FURNISHING_OPTIONS = [
   { value: 'unfurnished', label: 'Pa mobilim' },
 ];
 
-const HEATING_OPTIONS = [
-  { value: 'wood',     label: 'Dru' },
-  { value: 'pellet',   label: 'Pellet' },
-  { value: 'gas',      label: 'Gaz' },
-  { value: 'keds',     label: 'KEDS' },
-  { value: 'termokos', label: 'Termokos' },
-  { value: 'oil',      label: 'Mazut' },
-];
-
-const EXTRAS_OPTIONS = [
-  { value: 'elevator',         label: '🛗 Ashensor' },
-  { value: 'garage',           label: '🚗 Garazh' },
-  { value: 'parking',          label: '🅿️ Parking' },
-  { value: 'air_conditioning', label: '❄️ Klimë' },
-  { value: 'tv',               label: '📺 TV' },
-  { value: 'internet',         label: '🌐 Internet' },
-  { value: 'storage',          label: '📦 Depo' },
-];
 
 const ORIENTATION_OPTIONS = [
   { value: 'east',  label: 'Lindje' },
@@ -122,6 +103,7 @@ function SectionTitle({ n, title }: { n: number; title: string }) {
 export default function CreateListingPage() {
   const router = useRouter();
   const { currentUser, _hasHydrated } = useAuthStore();
+  const { cities, heatingOptions, amenities, loading: optLoading } = useOptions();
 
   const [images, setImages]     = useState<string[]>([]);
   const [uploading, setUploading] = useState(false);
@@ -319,7 +301,16 @@ export default function CreateListingPage() {
               <div className="grid grid-cols-2 gap-4">
                 <div>
                   <label className="block text-sm font-semibold text-gray-700 mb-1.5">Qyteti *</label>
-                  <input {...register('city')} placeholder="Prishtinë" className="w-full border border-gray-200 rounded-xl px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-rose-400" />
+                  {cities.length > 0 ? (
+                    <select {...register('city')} className="w-full border border-gray-200 rounded-xl px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-rose-400 bg-white">
+                      <option value="">— Zgjidh qytetin —</option>
+                      {cities.map((c) => (
+                        <option key={c.slug} value={c.name}>{c.icon} {c.name}</option>
+                      ))}
+                    </select>
+                  ) : (
+                    <input {...register('city')} placeholder="Prishtinë" className="w-full border border-gray-200 rounded-xl px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-rose-400" />
+                  )}
                   <FieldError msg={errors.city?.message} />
                 </div>
                 <div>
@@ -439,47 +430,55 @@ export default function CreateListingPage() {
           {/* ── 7. Heating ───────────────────────────────────────────── */}
           <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-6">
             <SectionTitle n={7} title="Sistemi i ngrohjes" />
-            <Controller
-              name="heating"
-              control={control}
-              render={({ field }) => (
-                <div className="flex flex-wrap gap-2">
-                  {HEATING_OPTIONS.map(({ value, label }) => (
-                    <Chip
-                      key={value} label={label}
-                      active={field.value.includes(value as never)}
-                      onClick={() => {
-                        const cur = field.value as string[];
-                        field.onChange(cur.includes(value) ? cur.filter((v) => v !== value) : [...cur, value]);
-                      }}
-                    />
-                  ))}
-                </div>
-              )}
-            />
+            {optLoading ? (
+              <p className="text-gray-400 text-sm">Duke ngarkuar…</p>
+            ) : (
+              <Controller
+                name="heating"
+                control={control}
+                render={({ field }) => (
+                  <div className="flex flex-wrap gap-2">
+                    {heatingOptions.map((opt) => (
+                      <Chip
+                        key={opt.slug} label={`${opt.icon} ${opt.name}`}
+                        active={field.value.includes(opt.slug)}
+                        onClick={() => {
+                          const cur = field.value as string[];
+                          field.onChange(cur.includes(opt.slug) ? cur.filter((v) => v !== opt.slug) : [...cur, opt.slug]);
+                        }}
+                      />
+                    ))}
+                  </div>
+                )}
+              />
+            )}
           </div>
 
           {/* ── 8. Extras ────────────────────────────────────────────── */}
           <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-6">
             <SectionTitle n={8} title="Veçori shtesë" />
-            <Controller
-              name="extras"
-              control={control}
-              render={({ field }) => (
-                <div className="flex flex-wrap gap-2">
-                  {EXTRAS_OPTIONS.map(({ value, label }) => (
-                    <Chip
-                      key={value} label={label}
-                      active={field.value.includes(value as never)}
-                      onClick={() => {
-                        const cur = field.value as string[];
-                        field.onChange(cur.includes(value) ? cur.filter((v) => v !== value) : [...cur, value]);
-                      }}
-                    />
-                  ))}
-                </div>
-              )}
-            />
+            {optLoading ? (
+              <p className="text-gray-400 text-sm">Duke ngarkuar…</p>
+            ) : (
+              <Controller
+                name="extras"
+                control={control}
+                render={({ field }) => (
+                  <div className="flex flex-wrap gap-2">
+                    {amenities.map((opt) => (
+                      <Chip
+                        key={opt.slug} label={`${opt.icon} ${opt.name}`}
+                        active={field.value.includes(opt.slug)}
+                        onClick={() => {
+                          const cur = field.value as string[];
+                          field.onChange(cur.includes(opt.slug) ? cur.filter((v) => v !== opt.slug) : [...cur, opt.slug]);
+                        }}
+                      />
+                    ))}
+                  </div>
+                )}
+              />
+            )}
           </div>
 
           {/* ── 9. Location ──────────────────────────────────────────── */}

@@ -6,6 +6,7 @@ import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import Image from 'next/image';
 import { usePropertyStore, useAuthStore, usePaymentStore, useWishlistStore, useCompareStore } from '@/lib/store';
+import { useOptions, toLabels, toIcons } from '@/lib/useOptions';
 import { api } from '@/lib/api';
 import { Property } from '@/types';
 import { formatPrice, formatPricePerSqm, timeAgo } from '@/lib/utils';
@@ -26,17 +27,7 @@ const FURNISHING_LABELS: Record<string, string> = {
   living_room: 'Dhoma ndenje', kitchen: 'Kuzhinë', bathroom: 'Banjë',
   bedroom: 'Dhomë gjumi', wc: 'WC', unfurnished: 'Pa mobilim',
 };
-const HEATING_LABELS: Record<string, string> = {
-  wood: 'Dru', pellet: 'Pellet', gas: 'Gaz', keds: 'KEDS', termokos: 'Termokos', oil: 'Mazut',
-};
-const EXTRA_LABELS: Record<string, string> = {
-  elevator: 'Ashensor', garage: 'Garazh', parking: 'Parking',
-  air_conditioning: 'Klimë', tv: 'TV', internet: 'Internet', storage: 'Depo',
-};
-const EXTRA_ICONS: Record<string, string> = {
-  elevator: '🛗', garage: '🚗', parking: '🅿️',
-  air_conditioning: '❄️', tv: '📺', internet: '🌐', storage: '📦',
-};
+// Heating + extra labels/icons are now built dynamically from DB data (see useOptions in component)
 
 // ─── Lightbox ─────────────────────────────────────────────────────────────────
 
@@ -139,6 +130,11 @@ export default function PropertyDetail({ id }: Props) {
   const { isUnlocked } = usePaymentStore();
   const { has: inWishlist, toggle: toggleWishlist } = useWishlistStore();
   const { has: inCompare, add: addCompare, remove: removeCompare, ids: compareIds } = useCompareStore();
+  const { heatingOptions, amenities: amenityOptions } = useOptions();
+
+  const HEATING_LABELS = toLabels(heatingOptions);
+  const EXTRA_LABELS   = toLabels(amenityOptions);
+  const EXTRA_ICONS    = toIcons(amenityOptions);
   const router = useRouter();
 
   const [property, setProperty] = useState<Property | null>(null);
