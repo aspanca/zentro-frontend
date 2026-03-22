@@ -395,6 +395,7 @@ export default function ZonesPage() {
             drawPoints={drawPoints}
             onAddPoint={handleAddPoint}
             onMovePoint={setCursorPoint}
+            onClose={handleSave}
             cursorPoint={cursorPoint}
             onSelectZone={(z) => { setSelectedId(z.id); handleEdit(z); }}
             selectedId={selectedId}

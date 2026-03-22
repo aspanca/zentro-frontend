@@ -1,9 +1,8 @@
 'use client';
 
-import { useState } from 'react';
 import {
   MapContainer, TileLayer, Polygon, Polyline, CircleMarker,
-  Tooltip, Marker, useMapEvents,
+  Tooltip, Marker, useMapEvents, useMap,
 } from 'react-leaflet';
 import L from 'leaflet';
 import 'leaflet/dist/leaflet.css';
@@ -30,36 +29,68 @@ const TYPE_DEFAULTS: Record<ZoneType, { color: string; label: string; icon: stri
 function zoneColor(z: ZoneRow) { return z.color ?? TYPE_DEFAULTS[z.type].color; }
 
 // Numbered vertex icon for the drawing layer
-function vertexIcon(n: number, isFirst: boolean) {
+function vertexIcon(n: number, isFirst: boolean, canClose: boolean) {
+  const size  = isFirst && canClose ? 28 : 22;
+  const half  = size / 2;
+  const pulse = isFirst && canClose
+    ? `<div style="
+        position:absolute;inset:-6px;border-radius:50%;
+        border:2px solid #22c55e;opacity:0.6;
+        animation:zp 1.2s ease-out infinite;
+      "></div>
+      <style>@keyframes zp{0%{transform:scale(1);opacity:.7}100%{transform:scale(1.8);opacity:0}}</style>`
+    : '';
+
   return L.divIcon({
     className: '',
-    iconSize: [22, 22],
-    iconAnchor: [11, 11],
-    html: `<div style="
-      width:22px;height:22px;border-radius:50%;
-      background:${isFirst ? '#22c55e' : '#6366f1'};
-      border:2.5px solid #fff;
-      box-shadow:0 1px 4px rgba(0,0,0,.5);
-      display:flex;align-items:center;justify-content:center;
-      color:#fff;font-size:9px;font-weight:700;line-height:1;
-    ">${n}</div>`,
+    iconSize:   [size, size],
+    iconAnchor: [half, half],
+    html: `<div style="position:relative;width:${size}px;height:${size}px;">
+      ${pulse}
+      <div style="
+        position:absolute;inset:0;border-radius:50%;
+        background:${isFirst ? '#22c55e' : '#6366f1'};
+        border:2.5px solid #fff;
+        box-shadow:0 1px 6px rgba(0,0,0,.5);
+        display:flex;align-items:center;justify-content:center;
+        color:#fff;font-size:${isFirst && canClose ? 10 : 9}px;font-weight:700;
+        cursor:${isFirst && canClose ? 'pointer' : 'crosshair'};
+      ">${n}</div>
+    </div>`,
   });
 }
 
 // ─── Drawing layer — handles clicks, mouse move, renders in-progress polygon ──
 
+const CLOSE_PX = 16; // pixel radius to snap-close the polygon
+
 function DrawLayer({
-  active, points, onAddPoint, onMovePoint,
+  active, points, onAddPoint, onMovePoint, onClose,
 }: {
   active: boolean;
   points: [number, number][];
   onAddPoint: (p: [number, number]) => void;
   onMovePoint: (p: [number, number] | null) => void;
+  onClose: () => void;
 }) {
+  const map = useMap();
+
   useMapEvents({
-    click(e) { if (active) onAddPoint([e.latlng.lat, e.latlng.lng]); },
+    click(e) {
+      if (!active) return;
+
+      // Close polygon when clicking near the first point (≥3 points placed)
+      if (points.length >= 3) {
+        const firstPx = map.latLngToContainerPoint(L.latLng(points[0][0], points[0][1]));
+        const clickPx = map.latLngToContainerPoint(e.latlng);
+        const dist = Math.hypot(firstPx.x - clickPx.x, firstPx.y - clickPx.y);
+        if (dist <= CLOSE_PX) { onClose(); return; }
+      }
+
+      onAddPoint([e.latlng.lat, e.latlng.lng]);
+    },
     mousemove(e) { if (active) onMovePoint([e.latlng.lat, e.latlng.lng]); },
-    mouseout() { onMovePoint(null); },
+    mouseout()   { onMovePoint(null); },
   });
   return null;
 }
@@ -72,13 +103,14 @@ interface Props {
   drawPoints: [number, number][];
   onAddPoint: (p: [number, number]) => void;
   onMovePoint: (p: [number, number] | null) => void;
+  onClose: () => void;
   cursorPoint: [number, number] | null;
   onSelectZone: (z: ZoneRow) => void;
   selectedId: number | null;
 }
 
 export default function ZoneMap({
-  zones, drawing, drawPoints, onAddPoint, onMovePoint,
+  zones, drawing, drawPoints, onAddPoint, onMovePoint, onClose,
   cursorPoint, onSelectZone, selectedId,
 }: Props) {
   const KOSOVO_CENTER: [number, number] = [42.6629, 21.1655];
@@ -162,8 +194,9 @@ export default function ZoneMap({
               <Marker
                 key={i}
                 position={p}
-                icon={vertexIcon(i + 1, i === 0)}
-                interactive={false}
+                icon={vertexIcon(i + 1, i === 0, drawPoints.length >= 3)}
+                interactive={i === 0 && drawPoints.length >= 3}
+                eventHandlers={i === 0 && drawPoints.length >= 3 ? { click: (e) => { L.DomEvent.stopPropagation(e); onClose(); } } : {}}
               />
             ))}
 
@@ -184,6 +217,7 @@ export default function ZoneMap({
           points={drawPoints}
           onAddPoint={onAddPoint}
           onMovePoint={onMovePoint}
+          onClose={onClose}
         />
       </MapContainer>
 
@@ -197,7 +231,7 @@ export default function ZoneMap({
             ? '1 pikë — vazhdo të klikosh'
             : drawPoints.length === 2
             ? '2 pikë — duhen të paktën 3'
-            : `${drawPoints.length} pikë — kliko "Mbaro" ose vazhdo`}
+            : `${drawPoints.length} pikë — kliko pikën e parë 🟢 për të mbyllur`}
         </div>
       )}
     </div>
