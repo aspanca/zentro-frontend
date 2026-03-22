@@ -7,7 +7,7 @@ const nextConfig = {
     ignoreDuringBuilds: true,
   },
   images: {
-    domains: ['images.unsplash.com', 'res.cloudinary.com'],
+    domains: ['images.unsplash.com', 'res.cloudinary.com', 'ui-avatars.com'],
   },
   async rewrites() {
     // In production Vercel proxies /api/* to the backend server-side,

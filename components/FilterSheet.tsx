@@ -365,7 +365,6 @@ export default function FilterSheet({ open, onClose }: Props) {
               Kërko
             </button>
           </div>
-        </div>
       </div>
     </div>
   );
