@@ -196,7 +196,7 @@ export const defaultFilters: FilterState = {
   maxSize: '',
   bedrooms: '',
   bathrooms: '',
-  orientation: '',
+  orientation: [],
   furnishing: [],
   heating: [],
   extras: [],

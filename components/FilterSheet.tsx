@@ -73,7 +73,7 @@ export function activeFilterCount(filters: FilterState) {
   if (filters.minSize  !== '' || filters.maxSize  !== '') n++;
   if (filters.bedrooms !== '') n++;
   if (filters.bathrooms !== '') n++;
-  if (filters.orientation)    n++;
+  n += filters.orientation.length;
   n += filters.furnishing.length;
   n += filters.heating.length;
   n += filters.extras.length;
@@ -152,26 +152,30 @@ export default function FilterSheet({ open, onClose }: Props) {
   ];
 
   return (
-    <>
+    <div className="fixed inset-0 z-[9999] flex items-end md:items-center md:justify-center">
       {/* Backdrop */}
-      <div className="fixed inset-0 z-40 bg-black/40 backdrop-blur-sm" onClick={onClose} />
+      <div className="absolute inset-0 bg-black/50 backdrop-blur-sm" onClick={onClose} />
 
-      {/* Sheet — slides up from bottom on mobile, centered modal on desktop */}
-      <div className="fixed inset-x-0 bottom-0 z-50 md:inset-0 md:flex md:items-center md:justify-center md:p-4">
-        <div className="bg-white md:rounded-2xl md:shadow-2xl w-full md:max-w-lg md:max-h-[90vh] rounded-t-2xl shadow-2xl flex flex-col max-h-[92vh]">
+      {/* Panel */}
+      <div className="relative bg-white w-full md:max-w-lg rounded-t-2xl md:rounded-2xl shadow-2xl flex flex-col max-h-[95vh] md:max-h-[90vh] md:mx-4">
 
-          {/* Header */}
-          <div className="flex items-center justify-between px-5 py-4 border-b border-gray-100 flex-shrink-0">
-            <h2 className="text-lg font-bold text-gray-900">Filtrat</h2>
-            <button onClick={onClose} className="p-2 rounded-xl hover:bg-gray-100 transition-colors text-gray-500">
-              <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-              </svg>
-            </button>
-          </div>
+        {/* Drag handle (mobile) */}
+        <div className="flex justify-center pt-3 pb-1 md:hidden">
+          <div className="w-10 h-1.5 rounded-full bg-gray-300" />
+        </div>
 
-          {/* Scrollable body */}
-          <div className="flex-1 overflow-y-auto px-5">
+        {/* Header */}
+        <div className="flex items-center justify-between px-5 py-3 md:py-4 border-b border-gray-100 flex-shrink-0">
+          <h2 className="text-lg font-bold text-gray-900">Filtrat</h2>
+          <button onClick={onClose} className="w-9 h-9 rounded-full bg-gray-100 hover:bg-gray-200 flex items-center justify-center text-gray-500 transition-colors">
+            <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+            </svg>
+          </button>
+        </div>
+
+        {/* Scrollable body */}
+        <div className="flex-1 overflow-y-auto px-5 overscroll-contain">
 
             {/* Listing type */}
             <Section title="Lloji i listimit">
@@ -276,13 +280,17 @@ export default function FilterSheet({ open, onClose }: Props) {
               </div>
             </Section>
 
-            {/* Orientation */}
+            {/* Orientation (multi-select) */}
             <Section title="Orientimi">
               <div className="flex flex-wrap gap-2">
-                <Chip label="Të gjitha" active={draft.orientation === ''} onClick={() => setD('orientation', '')} />
-                {ORIENTATIONS.map(({ value, label }) => (
-                  <Chip key={value} label={label} active={draft.orientation === value} onClick={() => setD('orientation', draft.orientation === value ? '' : value)} />
-                ))}
+                {ORIENTATIONS.map(({ value, label }) => {
+                  const sel = draft.orientation ?? [];
+                  const active = sel.includes(value);
+                  return (
+                    <Chip key={value} label={label} active={active}
+                      onClick={() => setD('orientation', active ? sel.filter((v: string) => v !== value) : [...sel, value])} />
+                  );
+                })}
               </div>
             </Section>
 
@@ -341,7 +349,7 @@ export default function FilterSheet({ open, onClose }: Props) {
           </div>
 
           {/* Footer */}
-          <div className="flex gap-3 px-5 py-4 border-t border-gray-100 flex-shrink-0 bg-white">
+          <div className="flex gap-3 px-5 py-4 border-t border-gray-100 flex-shrink-0 bg-white rounded-b-2xl">
             <button
               type="button"
               onClick={clearAll}
@@ -359,6 +367,6 @@ export default function FilterSheet({ open, onClose }: Props) {
           </div>
         </div>
       </div>
-    </>
+    </div>
   );
 }

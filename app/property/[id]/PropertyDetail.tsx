@@ -183,7 +183,13 @@ export default function PropertyDetail({ id }: Props) {
   const heating  = property.heating   ?? [];
 
   const categoryLabel   = property.category   ? (CATEGORY_LABELS[property.category]   ?? property.category)   : null;
-  const orientationLabel = property.orientation ? (ORIENTATION_LABELS[property.orientation] ?? property.orientation) : null;
+  const orientations: string[] = Array.isArray(property.orientation)
+    ? property.orientation
+    : (property.orientation ? [property.orientation] : []);
+  const orientationLabel = orientations.length > 0
+    ? orientations.map((o) => ORIENTATION_LABELS[o] ?? o).join(', ')
+    : null;
+  const balconies = property.balconies ?? (property.hasBalcony ? 1 : 0);
   const listingBadge = property.listingType === 'rent' ? { label: 'Qira', cls: 'bg-blue-500' } : { label: 'Shitje', cls: 'bg-rose-500' };
 
   return (
@@ -323,7 +329,7 @@ export default function PropertyDetail({ id }: Props) {
                 {property.floor != null && <SpecCard icon="🏗️" label="Kati" value={property.floor === 0 ? 'Përdhesë' : `Kati ${property.floor}`} />}
                 <SpecCard icon="📍" label="Qyteti"    value={property.city} />
                 <SpecCard icon="🏘️" label="Lagja"     value={property.neighborhood} />
-                <SpecCard icon={property.hasBalcony ? '✅' : '❌'} label="Ballkon" value={property.hasBalcony ? 'Ka ballkon' : 'Pa ballkon'} />
+                <SpecCard icon={balconies > 0 ? '✅' : '❌'} label="Ballkone" value={balconies > 0 ? String(balconies) : 'Pa ballkon'} />
                 {orientationLabel && <SpecCard icon="🧭" label="Orientimi" value={orientationLabel} />}
               </div>
             </div>
@@ -387,7 +393,7 @@ export default function PropertyDetail({ id }: Props) {
                 <DetailRow label="Dhoma gjumi" value={property.bedrooms} />
                 <DetailRow label="Banjo"       value={property.bathrooms} />
                 {property.floor != null && <DetailRow label="Kati" value={property.floor === 0 ? 'Përdhesë' : `Kati ${property.floor}`} />}
-                <DetailRow label="Ballkon"     value={property.hasBalcony ? 'Po' : 'Jo'} />
+                <DetailRow label="Ballkone"    value={balconies > 0 ? String(balconies) : 'Jo'} />
                 <DetailRow label="Kategoria"   value={categoryLabel} />
               </div>
 

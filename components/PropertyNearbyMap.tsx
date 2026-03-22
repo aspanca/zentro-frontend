@@ -250,32 +250,32 @@ export default function PropertyNearbyMap({ lat, lng }: Props) {
         </div>
       </div>
 
-      {/* Body: map + panel */}
-      <div className="flex flex-col lg:flex-row">
-
-        {/* Map — z-index capped so it never overlaps navbar */}
-        <div className="relative lg:flex-1 z-0" style={{ height: 380 }}>
-          {typeof window !== 'undefined' && (
-            <LeafletMap lat={lat} lng={lng} result={result} activeKeys={activeKeys} />
-          )}
-          {loading && (
-            <div className="absolute inset-0 flex items-center justify-center bg-white/80 backdrop-blur-sm z-10">
-              <div className="text-center">
-                <div className="w-9 h-9 rounded-full mx-auto mb-3 animate-spin" style={{ border: '3px solid #e5e7eb', borderTopColor: '#10b981' }} />
-                <p className="text-sm font-medium text-gray-700">Duke ngarkuar shërbimet…</p>
-              </div>
+      {/* Map — full width */}
+      <div className="relative z-0" style={{ height: 420 }}>
+        {typeof window !== 'undefined' && (
+          <LeafletMap lat={lat} lng={lng} result={result} activeKeys={activeKeys} />
+        )}
+        {loading && (
+          <div className="absolute inset-0 flex items-center justify-center bg-white/80 backdrop-blur-sm z-10">
+            <div className="text-center">
+              <div className="w-9 h-9 rounded-full mx-auto mb-3 animate-spin" style={{ border: '3px solid #e5e7eb', borderTopColor: '#10b981' }} />
+              <p className="text-sm font-medium text-gray-700">Duke ngarkuar shërbimet…</p>
             </div>
-          )}
-          {error && !loading && (
-            <div className="absolute inset-0 flex items-center justify-center bg-white/90 z-10">
-              <p className="text-sm text-gray-500">⚠️ {error}</p>
-            </div>
-          )}
-        </div>
+          </div>
+        )}
+        {error && !loading && (
+          <div className="absolute inset-0 flex items-center justify-center bg-white/90 z-10">
+            <p className="text-sm text-gray-500">⚠️ {error}</p>
+          </div>
+        )}
+      </div>
 
-        {/* Desktop panel — always visible on lg+ */}
-        <div className="hidden lg:flex lg:w-80 xl:w-96 border-l border-gray-100 flex-col">
-          <div className="flex items-center gap-4 px-5 py-3 border-b border-gray-100 bg-gray-50/60">
+      {/* Desktop: category grid below the map */}
+      {result && (
+        <div className="hidden lg:block border-t border-gray-100">
+          {/* Legend */}
+          <div className="flex items-center gap-5 px-5 py-3 bg-gray-50/60 border-b border-gray-100">
+            <span className="text-sm font-semibold text-gray-700">Distanca:</span>
             {[['#10b981', '< 300 m'], ['#d97706', '< 700 m'], ['#dc2626', '> 700 m']].map(([color, label]) => (
               <span key={label} className="flex items-center gap-1.5 text-sm font-medium text-gray-500">
                 <span className="w-3 h-3 rounded-full flex-shrink-0" style={{ background: color }} />
@@ -283,19 +283,14 @@ export default function PropertyNearbyMap({ lat, lng }: Props) {
               </span>
             ))}
           </div>
-          {result ? (
-            <div className="flex-1 overflow-y-auto p-3 space-y-2.5" style={{ maxHeight: 380 }}>
-              {sortedCats.map(([key, cat]) => (
-                <CategoryCard key={key} catKey={key} cat={cat} active={activeKeys.has(key)} onToggle={() => toggle(key)} />
-              ))}
-            </div>
-          ) : (
-            <div className="flex-1 flex items-center justify-center p-6 text-center text-base text-gray-400">
-              {loading ? 'Duke ngarkuar…' : 'Nuk u gjend asnjë shërbim.'}
-            </div>
-          )}
+          {/* Cards grid */}
+          <div className="grid grid-cols-2 xl:grid-cols-3 gap-3 p-4">
+            {sortedCats.map(([key, cat]) => (
+              <CategoryCard key={key} catKey={key} cat={cat} active={activeKeys.has(key)} onToggle={() => toggle(key)} />
+            ))}
+          </div>
         </div>
-      </div>
+      )}
 
       {/* Mobile modal overlay */}
       {panelOpen && (

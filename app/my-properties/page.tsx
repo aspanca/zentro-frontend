@@ -58,11 +58,11 @@ function EditModal({ property, onClose, onSaved }: { property: Property; onClose
   const [bedrooms, setBedrooms]         = useState(String(property.bedrooms ?? 1));
   const [bathrooms, setBathrooms]       = useState(String(property.bathrooms ?? 1));
   const [floor, setFloor]               = useState(property.floor != null ? String(property.floor) : '');
-  const [orientation, setOrientation]   = useState<Orientation | ''>(property.orientation ?? '');
+  const [orientation, setOrientation]   = useState<string[]>(Array.isArray(property.orientation) ? property.orientation : (property.orientation ? [property.orientation] : []));
   const [furnishing, setFurnishing]     = useState<string[]>(property.furnishing ?? []);
   const [heating, setHeating]           = useState<string[]>(property.heating ?? []);
   const [extras, setExtras]             = useState<string[]>(property.extras ?? []);
-  const [hasBalcony, setHasBalcony]     = useState(property.hasBalcony ?? false);
+  const [balconies, setBalconies]       = useState(String(property.balconies ?? 0));
   const [lat, setLat]                   = useState<number | null>(property.lat ?? null);
   const [lng, setLng]                   = useState<number | null>(property.lng ?? null);
   const [images, setImages]             = useState<string[]>(property.images ?? []);
@@ -104,8 +104,8 @@ function EditModal({ property, onClose, onSaved }: { property: Property; onClose
         size: Number(size), pricePerSqm: Number(pricePerSqm),
         bedrooms: Number(bedrooms), bathrooms: Number(bathrooms),
         floor: floor !== '' ? Number(floor) : null,
-        orientation: orientation || null,
-        furnishing, heating, extras, hasBalcony, images,
+        orientation,
+        furnishing, heating, extras, balconies: Number(balconies), images,
         lat, lng,
       }) as Property;
       onSaved(updated);
@@ -255,23 +255,20 @@ function EditModal({ property, onClose, onSaved }: { property: Property; onClose
             </div>
           </div>
 
-          {/* Balcony toggle */}
-          <div className="flex items-center gap-3">
-            <button type="button" onClick={() => setHasBalcony(!hasBalcony)}
-              className={`relative w-11 h-6 rounded-full transition-colors ${hasBalcony ? 'bg-rose-500' : 'bg-gray-200'}`}
-            >
-              <span className={`absolute top-0.5 w-5 h-5 bg-white rounded-full shadow transition-all ${hasBalcony ? 'left-5' : 'left-0.5'}`} style={{ left: hasBalcony ? '22px' : '2px' }} />
-            </button>
-            <label className="text-sm font-semibold text-gray-700">Ka ballkon</label>
+          {/* Balconies */}
+          <div>
+            <label className="block text-sm font-semibold text-gray-700 mb-1.5">Ballkone</label>
+            <input type="number" min="0" value={balconies} onChange={(e) => setBalconies(e.target.value)}
+              className="w-full border border-gray-200 rounded-xl px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-rose-400" />
           </div>
 
-          {/* Orientation */}
+          {/* Orientation (multi-select) */}
           <div>
-            <p className="text-sm font-semibold text-gray-700 mb-2">Orientimi</p>
+            <p className="text-sm font-semibold text-gray-700 mb-2">Orientimi (mund të zgjedhësh disa)</p>
             <div className="flex flex-wrap gap-2">
-              <Chip label="Pa preferencë" active={!orientation} onClick={() => setOrientation('')} />
               {ORIENTATION_OPTIONS.map(({ value, label }) => (
-                <Chip key={value} label={label} active={orientation === value} onClick={() => setOrientation(orientation === value ? '' : value as Orientation)} />
+                <Chip key={value} label={label} active={orientation.includes(value)}
+                  onClick={() => setOrientation(orientation.includes(value) ? orientation.filter((v) => v !== value) : [...orientation, value])} />
               ))}
             </div>
           </div>

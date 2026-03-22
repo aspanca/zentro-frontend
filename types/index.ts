@@ -63,11 +63,12 @@ export interface Property {
   bedrooms: number;
   bathrooms: number;
   floor?: number | null;
-  orientation?: Orientation | null;
+  orientation?: string[] | Orientation | null;
   furnishing: FurnishingOption[];
   heating: HeatingOption[];
   extras: ExtraOption[];
-  hasBalcony: boolean;
+  balconies?: number;
+  hasBalcony?: boolean;
   images: string[];
   userId: string;
   createdAt: string;
@@ -97,7 +98,7 @@ export interface FilterState {
   maxSize: number | '';
   bedrooms: number | '';
   bathrooms: number | '';
-  orientation: Orientation | '';
+  orientation: string[];
   furnishing: string[];
   heating: string[];
   extras: string[];

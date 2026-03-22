@@ -30,11 +30,11 @@ const schema = z.object({
   bedrooms:     z.coerce.number().int().min(0).default(1),
   bathrooms:    z.coerce.number().int().min(0).default(1),
   floor:        z.coerce.number().int().optional().or(z.literal('')).transform((v) => (v === '' ? null : v)),
-  orientation:  z.enum(['east', 'west', 'north', 'south']).optional().or(z.literal('')).transform((v) => v || null),
+  orientation:  z.array(z.string()).default([]),
   furnishing:   z.array(z.string()).default([]),
   heating:      z.array(z.string()).default([]),
   extras:       z.array(z.string()).default([]),
-  hasBalcony:   z.boolean().default(false),
+  balconies:    z.coerce.number().int().min(0).default(0),
 });
 
 type FormValues = z.infer<typeof schema>;
@@ -124,10 +124,11 @@ export default function CreateListingPage() {
       category:    'apartment',
       bedrooms:    1,
       bathrooms:   1,
+      orientation: [],
       furnishing:  [],
       heating:     [],
       extras:      [],
-      hasBalcony:  false,
+      balconies:   0,
     },
   });
 
@@ -367,38 +368,34 @@ export default function CreateListingPage() {
                   <label className="block text-sm font-semibold text-gray-700 mb-1.5">Kati</label>
                   <input {...register('floor')} type="number" placeholder="0 = Përdhesë" className="w-full border border-gray-200 rounded-xl px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-rose-400" />
                 </div>
-                <div className="flex items-center gap-3 pt-7">
-                  <Controller
-                    name="hasBalcony"
-                    control={control}
-                    render={({ field }) => (
-                      <label className="flex items-center gap-2.5 cursor-pointer">
-                        <div
-                          onClick={() => field.onChange(!field.value)}
-                          className={`w-11 h-6 rounded-full relative transition-colors ${field.value ? 'bg-rose-500' : 'bg-gray-200'}`}
-                        >
-                          <div className={`w-5 h-5 bg-white rounded-full absolute top-0.5 transition-all ${field.value ? 'left-5.5' : 'left-0.5'}`} style={{ left: field.value ? '22px' : '2px' }} />
-                        </div>
-                        <span className="text-sm font-semibold text-gray-700">Ka ballkon</span>
-                      </label>
-                    )}
-                  />
+                <div>
+                  <label className="block text-sm font-semibold text-gray-700 mb-1.5">Ballkone</label>
+                  <input {...register('balconies')} type="number" min="0" placeholder="0" className="w-full border border-gray-200 rounded-xl px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-rose-400" />
                 </div>
               </div>
 
               <div>
-                <label className="block text-sm font-semibold text-gray-700 mb-2">Orientimi (opsional)</label>
+                <label className="block text-sm font-semibold text-gray-700 mb-2">Orientimi (mund të zgjedhësh disa)</label>
                 <Controller
                   name="orientation"
                   control={control}
-                  render={({ field }) => (
-                    <div className="flex flex-wrap gap-2">
-                      <Chip label="Pa preferencë" active={!field.value} onClick={() => field.onChange('')} />
-                      {ORIENTATION_OPTIONS.map(({ value, label }) => (
-                        <Chip key={value} label={label} active={field.value === value} onClick={() => field.onChange(field.value === value ? '' : value)} />
-                      ))}
-                    </div>
-                  )}
+                  render={({ field }) => {
+                    const selected = (field.value ?? []) as string[];
+                    const toggleDir = (val: string) => {
+                      field.onChange(
+                        selected.includes(val)
+                          ? selected.filter((v) => v !== val)
+                          : [...selected, val]
+                      );
+                    };
+                    return (
+                      <div className="flex flex-wrap gap-2">
+                        {ORIENTATION_OPTIONS.map(({ value, label }) => (
+                          <Chip key={value} label={label} active={selected.includes(value)} onClick={() => toggleDir(value)} />
+                        ))}
+                      </div>
+                    );
+                  }}
                 />
               </div>
             </div>
