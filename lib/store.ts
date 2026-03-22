@@ -219,3 +219,26 @@ export const usePropertyStore = create<PropertyState>()(
     { name: 'kosova-prona-filters-v1' }
   )
 );
+
+// ─── Admin store ──────────────────────────────────────────────────────────────
+
+interface AdminState {
+  adminToken: string | null;
+  adminUser: { id: string; name: string; email: string } | null;
+  setAdmin: (token: string, user: { id: string; name: string; email: string }) => void;
+  clearAdmin: () => void;
+  isAdmin: () => boolean;
+}
+
+export const useAdminStore = create<AdminState>()(
+  persist(
+    (set, get) => ({
+      adminToken: null,
+      adminUser: null,
+      setAdmin: (token, user) => set({ adminToken: token, adminUser: user }),
+      clearAdmin: () => set({ adminToken: null, adminUser: null }),
+      isAdmin: () => !!get().adminToken,
+    }),
+    { name: 'zentro-admin-v1' }
+  )
+);
