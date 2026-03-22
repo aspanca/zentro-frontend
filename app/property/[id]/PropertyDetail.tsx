@@ -5,7 +5,7 @@ import dynamic from 'next/dynamic';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import Image from 'next/image';
-import { usePropertyStore, useAuthStore, usePaymentStore } from '@/lib/store';
+import { usePropertyStore, useAuthStore, usePaymentStore, useWishlistStore, useCompareStore } from '@/lib/store';
 import { api } from '@/lib/api';
 import { Property } from '@/types';
 import { formatPrice, formatPricePerSqm, timeAgo } from '@/lib/utils';
@@ -137,6 +137,8 @@ export default function PropertyDetail({ id }: Props) {
   const { properties } = usePropertyStore();
   const { currentUser } = useAuthStore();
   const { isUnlocked } = usePaymentStore();
+  const { has: inWishlist, toggle: toggleWishlist } = useWishlistStore();
+  const { has: inCompare, add: addCompare, remove: removeCompare, ids: compareIds } = useCompareStore();
   const router = useRouter();
 
   const [property, setProperty] = useState<Property | null>(null);
@@ -246,7 +248,39 @@ export default function PropertyDetail({ id }: Props) {
 
             {/* Title + location */}
             <div>
-              <h1 className="text-2xl sm:text-3xl font-bold text-gray-900 mb-2">{property.title}</h1>
+              <div className="flex items-start justify-between gap-4">
+                <h1 className="text-2xl sm:text-3xl font-bold text-gray-900 mb-2">{property.title}</h1>
+                {/* Wishlist + Compare */}
+                <div className="flex items-center gap-2 flex-shrink-0 mt-1">
+                  <button
+                    onClick={() => toggleWishlist(String(property.id))}
+                    title={inWishlist(String(property.id)) ? 'Hiq nga lista' : 'Shto në listë dëshirash'}
+                    className={`w-9 h-9 rounded-full border flex items-center justify-center transition-all ${
+                      inWishlist(String(property.id))
+                        ? 'bg-rose-500 border-rose-500 text-white'
+                        : 'bg-white border-gray-200 text-gray-400 hover:border-rose-300 hover:text-rose-500'
+                    }`}
+                  >
+                    <svg className="w-4 h-4" viewBox="0 0 24 24" fill={inWishlist(String(property.id)) ? 'currentColor' : 'none'} stroke="currentColor" strokeWidth={2}>
+                      <path strokeLinecap="round" strokeLinejoin="round" d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z" />
+                    </svg>
+                  </button>
+                  <button
+                    onClick={() => inCompare(String(property.id)) ? removeCompare(String(property.id)) : addCompare(String(property.id))}
+                    disabled={compareIds.length >= 3 && !inCompare(String(property.id))}
+                    title={inCompare(String(property.id)) ? 'Hiq nga krahasimi' : compareIds.length >= 3 ? 'Maksimumi 3 prona' : 'Shto në krahasim'}
+                    className={`w-9 h-9 rounded-full border flex items-center justify-center transition-all disabled:opacity-40 disabled:cursor-not-allowed ${
+                      inCompare(String(property.id))
+                        ? 'bg-indigo-500 border-indigo-500 text-white'
+                        : 'bg-white border-gray-200 text-gray-400 hover:border-indigo-300 hover:text-indigo-500'
+                    }`}
+                  >
+                    <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" />
+                    </svg>
+                  </button>
+                </div>
+              </div>
               <div className="flex flex-wrap items-center gap-2 text-gray-500 text-sm">
                 <svg className="w-4 h-4 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" />

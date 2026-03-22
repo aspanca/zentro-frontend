@@ -133,6 +133,48 @@ export const usePaymentStore = create<PaymentState>()(
   )
 );
 
+// ─── Compare store ────────────────────────────────────────────────────────────
+
+interface CompareState {
+  ids: string[];
+  add:    (id: string) => void;
+  remove: (id: string) => void;
+  clear:  () => void;
+  has:    (id: string) => boolean;
+}
+
+export const useCompareStore = create<CompareState>()(
+  persist(
+    (set, get) => ({
+      ids: [],
+      add:    (id) => set((s) => ({ ids: s.ids.includes(id) || s.ids.length >= 3 ? s.ids : [...s.ids, id] })),
+      remove: (id) => set((s) => ({ ids: s.ids.filter((i) => i !== id) })),
+      clear:  ()   => set({ ids: [] }),
+      has:    (id) => get().ids.includes(id),
+    }),
+    { name: 'zentro-compare-v1' }
+  )
+);
+
+// ─── Wishlist store ───────────────────────────────────────────────────────────
+
+interface WishlistState {
+  ids: string[];
+  toggle: (id: string) => void;
+  has:    (id: string) => boolean;
+}
+
+export const useWishlistStore = create<WishlistState>()(
+  persist(
+    (set, get) => ({
+      ids: [],
+      toggle: (id) => set((s) => ({ ids: s.ids.includes(id) ? s.ids.filter((i) => i !== id) : [...s.ids, id] })),
+      has:    (id) => get().ids.includes(id),
+    }),
+    { name: 'zentro-wishlist-v1' }
+  )
+);
+
 // ─── Property store ───────────────────────────────────────────────────────────
 
 interface PropertyState {

@@ -4,11 +4,12 @@ import Link from 'next/link';
 import Image from 'next/image';
 import { useRouter } from 'next/navigation';
 import { useState } from 'react';
-import { useAuthStore, usePaymentStore } from '@/lib/store';
+import { useAuthStore, usePaymentStore, useWishlistStore } from '@/lib/store';
 
 export default function Navbar() {
   const { currentUser, logout } = useAuthStore();
   const { credits } = usePaymentStore();
+  const { ids: wishlistIds } = useWishlistStore();
   const router = useRouter();
   const [menuOpen, setMenuOpen] = useState(false);
 
@@ -36,6 +37,17 @@ export default function Navbar() {
           <div className="hidden md:flex items-center gap-6">
             <Link href="/" className="text-gray-600 hover:text-gray-900 text-sm font-medium transition-colors">
               Kryefaqja
+            </Link>
+            {/* Wishlist icon */}
+            <Link href="/wishlist" className="relative text-gray-500 hover:text-rose-500 transition-colors" title="Lista e dëshirave">
+              <svg className="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2}>
+                <path strokeLinecap="round" strokeLinejoin="round" d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z" />
+              </svg>
+              {wishlistIds.length > 0 && (
+                <span className="absolute -top-1.5 -right-1.5 bg-rose-500 text-white text-[10px] font-bold w-4 h-4 rounded-full flex items-center justify-center">
+                  {wishlistIds.length}
+                </span>
+              )}
             </Link>
             {currentUser && (
               <>
@@ -119,6 +131,19 @@ export default function Navbar() {
             onClick={() => setMenuOpen(false)}
           >
             Kryefaqja
+          </Link>
+          <Link
+            href="/wishlist"
+            className="flex items-center gap-2 text-gray-700 font-medium py-2"
+            onClick={() => setMenuOpen(false)}
+          >
+            <svg className="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2}>
+              <path strokeLinecap="round" strokeLinejoin="round" d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z" />
+            </svg>
+            Lista e dëshirave
+            {wishlistIds.length > 0 && (
+              <span className="bg-rose-500 text-white text-xs font-bold px-1.5 py-0.5 rounded-full">{wishlistIds.length}</span>
+            )}
           </Link>
           {currentUser && (
             <>
