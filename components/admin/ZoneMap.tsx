@@ -62,7 +62,7 @@ function vertexIcon(n: number, isFirst: boolean, canClose: boolean) {
 
 // ─── Drawing layer — handles clicks, mouse move, renders in-progress polygon ──
 
-const CLOSE_PX = 16; // pixel radius to snap-close the polygon
+const CLOSE_PX = 24; // pixel radius to snap-close the polygon
 
 function DrawLayer({
   active, points, onAddPoint, onMovePoint, onClose,
@@ -78,11 +78,13 @@ function DrawLayer({
   useMapEvents({
     click(e) {
       if (!active) return;
+      // Stop default map behaviour so double-click zoom doesn't interfere
+      L.DomEvent.stopPropagation(e.originalEvent);
 
       // Close polygon when clicking near the first point (≥3 points placed)
       if (points.length >= 3) {
         const firstPx = map.latLngToContainerPoint(L.latLng(points[0][0], points[0][1]));
-        const clickPx = map.latLngToContainerPoint(e.latlng);
+        const clickPx = e.containerPoint;          // already a pixel point — no conversion needed
         const dist = Math.hypot(firstPx.x - clickPx.x, firstPx.y - clickPx.y);
         if (dist <= CLOSE_PX) { onClose(); return; }
       }
@@ -189,14 +191,13 @@ export default function ZoneMap({
               />
             )}
 
-            {/* Vertex markers with numbers */}
+            {/* Vertex markers — visual only, all clicks pass through to DrawLayer */}
             {drawPoints.map((p, i) => (
               <Marker
                 key={i}
                 position={p}
                 icon={vertexIcon(i + 1, i === 0, drawPoints.length >= 3)}
-                interactive={i === 0 && drawPoints.length >= 3}
-                eventHandlers={i === 0 && drawPoints.length >= 3 ? { click: (e) => { L.DomEvent.stopPropagation(e); onClose(); } } : {}}
+                interactive={false}
               />
             ))}
 
