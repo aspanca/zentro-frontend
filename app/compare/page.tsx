@@ -1,7 +1,6 @@
 'use client';
 
-export const dynamic = 'force-dynamic';
-
+import { Suspense } from 'react';
 import { useEffect, useState, useCallback } from 'react';
 import { useSearchParams, useRouter } from 'next/navigation';
 import Image from 'next/image';
@@ -57,7 +56,7 @@ function TagList({ items }: { items: string[] }) {
   );
 }
 
-export default function ComparePage() {
+function CompareContent() {
   const searchParams = useSearchParams();
   const router = useRouter();
   const { ids: storeIds, add, remove, has } = useCompareStore();
@@ -260,5 +259,17 @@ export default function ComparePage() {
         </div>
       </div>
     </div>
+  );
+}
+
+export default function ComparePage() {
+  return (
+    <Suspense fallback={
+      <div className="min-h-screen flex items-center justify-center">
+        <div className="animate-spin w-10 h-10 border-4 border-rose-500 border-t-transparent rounded-full" />
+      </div>
+    }>
+      <CompareContent />
+    </Suspense>
   );
 }
