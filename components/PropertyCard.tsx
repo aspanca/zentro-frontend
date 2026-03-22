@@ -32,6 +32,7 @@ export default function PropertyCard({ property }: Props) {
   const isCompared = inCompare(strId);
   const compareFull = compareIds.length >= 3 && !isCompared;
 
+  const isResidential = ['apartment', 'house'].includes(category);
   const extras = rawExtras ?? [];
   const mainImage = (images ?? [])[0] ?? null;
   const badge = listingType === 'rent' ? 'Qira' : 'Shitje';
@@ -163,9 +164,9 @@ export default function PropertyCard({ property }: Props) {
               </svg>
               {size} m²
             </span>
-            {bedrooms > 0 && <span>🛏 {bedrooms}</span>}
-            {bathrooms > 0 && <span>🚿 {bathrooms}</span>}
-            {hasBalcony && <span className="text-xs text-gray-400">🌿 Ballkon</span>}
+            {isResidential && bedrooms > 0 && <span>🛏 {bedrooms}</span>}
+            {isResidential && bathrooms > 0 && <span>🚿 {bathrooms}</span>}
+            {isResidential && hasBalcony && <span className="text-xs text-gray-400">🌿 Ballkon</span>}
           </div>
 
           {displayExtras.length > 0 && (

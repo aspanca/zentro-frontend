@@ -183,6 +183,7 @@ export default function PropertyDetail({ id }: Props) {
   const heating  = property.heating   ?? [];
 
   const categoryLabel   = property.category   ? (CATEGORY_LABELS[property.category]   ?? property.category)   : null;
+  const isResidential = ['apartment', 'house'].includes(property.category);
   const orientations: string[] = Array.isArray(property.orientation)
     ? property.orientation
     : (property.orientation ? [property.orientation] : []);
@@ -297,11 +298,11 @@ export default function PropertyDetail({ id }: Props) {
             {/* Quick stats */}
             <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
               {[
-                { value: `${property.size} m²`,        label: 'Sipërfaqja' },
-                { value: `€${property.pricePerSqm.toLocaleString()}`, label: '/ m²' },
-                { value: property.bedrooms ?? '—',     label: 'Dhoma gjumi' },
-                { value: property.bathrooms ?? '—',    label: 'Banjo' },
-              ].map(({ value, label }) => (
+                { value: `${property.size} m²`,        label: 'Sipërfaqja', show: true },
+                { value: `€${property.pricePerSqm.toLocaleString()}`, label: '/ m²', show: true },
+                { value: property.bedrooms ?? '—',     label: 'Dhoma gjumi', show: isResidential },
+                { value: property.bathrooms ?? '—',    label: 'Banjo', show: isResidential },
+              ].filter((s) => s.show).map(({ value, label }) => (
                 <div key={label} className="bg-gray-50 rounded-2xl p-4 text-center">
                   <p className="text-xl font-bold text-gray-900">{value}</p>
                   <p className="text-xs text-gray-500 mt-0.5">{label}</p>
@@ -324,12 +325,14 @@ export default function PropertyDetail({ id }: Props) {
                 <SpecCard icon="📐" label="Sipërfaqja" value={`${property.size} m²`} />
                 <SpecCard icon="💰" label="Çmimi total" value={formatPrice(property.totalPrice)} />
                 <SpecCard icon="📊" label="Çmimi / m²" value={formatPricePerSqm(property.pricePerSqm)} />
-                {(property.bedrooms ?? 0) > 0 && <SpecCard icon="🛏️" label="Dhoma gjumi" value={String(property.bedrooms)} />}
-                {(property.bathrooms ?? 0) > 0 && <SpecCard icon="🚿" label="Banjo"       value={String(property.bathrooms)} />}
-                {property.floor != null && <SpecCard icon="🏗️" label="Kati" value={property.floor === 0 ? 'Përdhesë' : `Kati ${property.floor}`} />}
+                {isResidential && (property.bedrooms ?? 0) > 0 && <SpecCard icon="🛏️" label="Dhoma gjumi" value={String(property.bedrooms)} />}
+                {isResidential && (property.bathrooms ?? 0) > 0 && <SpecCard icon="🚿" label="Banjo"       value={String(property.bathrooms)} />}
+                {(property.wc ?? 0) > 0 && <SpecCard icon="🚽" label="WC" value={String(property.wc)} />}
+                {(property.storage ?? 0) > 0 && <SpecCard icon="📦" label="Depo" value={String(property.storage)} />}
+                {isResidential && property.floor != null && <SpecCard icon="🏗️" label="Kati" value={property.floor === 0 ? 'Përdhesë' : `Kati ${property.floor}`} />}
                 <SpecCard icon="📍" label="Qyteti"    value={property.city} />
                 <SpecCard icon="🏘️" label="Lagja"     value={property.neighborhood} />
-                <SpecCard icon={balconies > 0 ? '✅' : '❌'} label="Ballkone" value={balconies > 0 ? String(balconies) : 'Pa ballkon'} />
+                {isResidential && <SpecCard icon={balconies > 0 ? '✅' : '❌'} label="Ballkone" value={balconies > 0 ? String(balconies) : 'Pa ballkon'} />}
                 {orientationLabel && <SpecCard icon="🧭" label="Orientimi" value={orientationLabel} />}
               </div>
             </div>
@@ -390,10 +393,12 @@ export default function PropertyDetail({ id }: Props) {
               {/* Key facts */}
               <div className="space-y-2 text-sm border-t border-gray-100 pt-4">
                 <DetailRow label="Sipërfaqja" value={`${property.size} m²`} />
-                <DetailRow label="Dhoma gjumi" value={property.bedrooms} />
-                <DetailRow label="Banjo"       value={property.bathrooms} />
-                {property.floor != null && <DetailRow label="Kati" value={property.floor === 0 ? 'Përdhesë' : `Kati ${property.floor}`} />}
-                <DetailRow label="Ballkone"    value={balconies > 0 ? String(balconies) : 'Jo'} />
+                {isResidential && <DetailRow label="Dhoma gjumi" value={property.bedrooms} />}
+                {isResidential && <DetailRow label="Banjo"       value={property.bathrooms} />}
+                {(property.wc ?? 0) > 0 && <DetailRow label="WC" value={property.wc} />}
+                {(property.storage ?? 0) > 0 && <DetailRow label="Depo" value={property.storage} />}
+                {isResidential && property.floor != null && <DetailRow label="Kati" value={property.floor === 0 ? 'Përdhesë' : `Kati ${property.floor}`} />}
+                {isResidential && <DetailRow label="Ballkone"    value={balconies > 0 ? String(balconies) : 'Jo'} />}
                 <DetailRow label="Kategoria"   value={categoryLabel} />
               </div>
 

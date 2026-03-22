@@ -29,6 +29,8 @@ const schema = z.object({
   pricePerSqm:  z.coerce.number().positive('Çmimi/m² duhet të jetë pozitiv.'),
   bedrooms:     z.coerce.number().int().min(0).default(1),
   bathrooms:    z.coerce.number().int().min(0).default(1),
+  wc:           z.coerce.number().int().min(0).default(0),
+  storage:      z.coerce.number().int().min(0).default(0),
   floor:        z.coerce.number().int().optional().or(z.literal('')).transform((v) => (v === '' ? null : v)),
   orientation:  z.array(z.string()).default([]),
   furnishing:   z.array(z.string()).default([]),
@@ -124,6 +126,8 @@ export default function CreateListingPage() {
       category:    'apartment',
       bedrooms:    1,
       bathrooms:   1,
+      wc:          0,
+      storage:     0,
       orientation: [],
       furnishing:  [],
       heating:     [],
@@ -134,7 +138,9 @@ export default function CreateListingPage() {
 
   const watchSize       = watch('size');
   const watchPricePerSqm = watch('pricePerSqm');
+  const watchCategory    = watch('category');
   const totalPrice = (watchSize && watchPricePerSqm) ? (watchSize * watchPricePerSqm) : 0;
+  const isResidential = ['apartment', 'house'].includes(watchCategory);
 
   useEffect(() => {
     if (_hasHydrated && !currentUser) router.replace('/auth/login');
@@ -350,29 +356,44 @@ export default function CreateListingPage() {
           <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-6">
             <SectionTitle n={5} title="Detajet e pronës" />
             <div className="space-y-5">
-              <div className="grid grid-cols-2 gap-4">
-                <div>
-                  <label className="block text-sm font-semibold text-gray-700 mb-1.5">Dhoma gjumi</label>
-                  <input {...register('bedrooms')} type="number" min="0" className="w-full border border-gray-200 rounded-xl px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-rose-400" />
-                  <FieldError msg={errors.bedrooms?.message} />
+              {isResidential && (
+                <div className="grid grid-cols-2 gap-4">
+                  <div>
+                    <label className="block text-sm font-semibold text-gray-700 mb-1.5">Dhoma gjumi</label>
+                    <input {...register('bedrooms')} type="number" min="0" className="w-full border border-gray-200 rounded-xl px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-rose-400" />
+                    <FieldError msg={errors.bedrooms?.message} />
+                  </div>
+                  <div>
+                    <label className="block text-sm font-semibold text-gray-700 mb-1.5">Banjo</label>
+                    <input {...register('bathrooms')} type="number" min="0" className="w-full border border-gray-200 rounded-xl px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-rose-400" />
+                    <FieldError msg={errors.bathrooms?.message} />
+                  </div>
                 </div>
-                <div>
-                  <label className="block text-sm font-semibold text-gray-700 mb-1.5">Banjo</label>
-                  <input {...register('bathrooms')} type="number" min="0" className="w-full border border-gray-200 rounded-xl px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-rose-400" />
-                  <FieldError msg={errors.bathrooms?.message} />
-                </div>
-              </div>
+              )}
 
               <div className="grid grid-cols-2 gap-4">
                 <div>
-                  <label className="block text-sm font-semibold text-gray-700 mb-1.5">Kati</label>
-                  <input {...register('floor')} type="number" placeholder="0 = Përdhesë" className="w-full border border-gray-200 rounded-xl px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-rose-400" />
+                  <label className="block text-sm font-semibold text-gray-700 mb-1.5">WC</label>
+                  <input {...register('wc')} type="number" min="0" placeholder="0" className="w-full border border-gray-200 rounded-xl px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-rose-400" />
                 </div>
                 <div>
-                  <label className="block text-sm font-semibold text-gray-700 mb-1.5">Ballkone</label>
-                  <input {...register('balconies')} type="number" min="0" placeholder="0" className="w-full border border-gray-200 rounded-xl px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-rose-400" />
+                  <label className="block text-sm font-semibold text-gray-700 mb-1.5">Depo</label>
+                  <input {...register('storage')} type="number" min="0" placeholder="0" className="w-full border border-gray-200 rounded-xl px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-rose-400" />
                 </div>
               </div>
+
+              {isResidential && (
+                <div className="grid grid-cols-2 gap-4">
+                  <div>
+                    <label className="block text-sm font-semibold text-gray-700 mb-1.5">Kati</label>
+                    <input {...register('floor')} type="number" placeholder="0 = Përdhesë" className="w-full border border-gray-200 rounded-xl px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-rose-400" />
+                  </div>
+                  <div>
+                    <label className="block text-sm font-semibold text-gray-700 mb-1.5">Ballkone</label>
+                    <input {...register('balconies')} type="number" min="0" placeholder="0" className="w-full border border-gray-200 rounded-xl px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-rose-400" />
+                  </div>
+                </div>
+              )}
 
               <div>
                 <label className="block text-sm font-semibold text-gray-700 mb-2">Orientimi (mund të zgjedhësh disa)</label>

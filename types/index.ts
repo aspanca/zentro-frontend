@@ -68,6 +68,8 @@ export interface Property {
   heating: HeatingOption[];
   extras: ExtraOption[];
   balconies?: number;
+  wc?: number;
+  storage?: number;
   hasBalcony?: boolean;
   images: string[];
   userId: string;

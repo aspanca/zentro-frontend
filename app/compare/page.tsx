@@ -198,9 +198,20 @@ function CompareContent() {
             <Row label="Lloji" values={properties.map((p) => p ? LISTING_LABELS[p.listingType ?? ''] ?? '—' : null)} />
             <Row label="Kategoria" values={properties.map((p) => p ? CATEGORY_LABELS[p.category ?? ''] ?? '—' : null)} />
             <Row label="Sipërfaqja" values={properties.map((p) => p?.size ? `${p.size} m²` : null)} />
-            <Row label="Dhoma gjumi" values={properties.map((p) => p?.bedrooms ?? null)} />
-            <Row label="Banjo" values={properties.map((p) => p?.bathrooms ?? null)} />
-            <Row label="Kati" values={properties.map((p) => p?.floor != null ? `Kati ${p.floor}` : null)} />
+            {properties.some((p) => p && ['apartment', 'house'].includes(p.category)) && (
+              <>
+                <Row label="Dhoma gjumi" values={properties.map((p) => p && ['apartment', 'house'].includes(p.category) ? (p.bedrooms ?? null) : null)} />
+                <Row label="Banjo" values={properties.map((p) => p && ['apartment', 'house'].includes(p.category) ? (p.bathrooms ?? null) : null)} />
+                <Row label="Kati" values={properties.map((p) => p && ['apartment', 'house'].includes(p.category) && p.floor != null ? `Kati ${p.floor}` : null)} />
+                <Row label="Ballkone" values={properties.map((p) => p && ['apartment', 'house'].includes(p.category) ? (p.balconies ?? 0) : null)} />
+              </>
+            )}
+            {properties.some((p) => (p?.wc ?? 0) > 0) && (
+              <Row label="WC" values={properties.map((p) => (p?.wc ?? 0) > 0 ? p!.wc! : null)} />
+            )}
+            {properties.some((p) => (p?.storage ?? 0) > 0) && (
+              <Row label="Depo" values={properties.map((p) => (p?.storage ?? 0) > 0 ? p!.storage! : null)} />
+            )}
             <Row label="Orientimi" values={properties.map((p) => p ? ORIENTATION_LABELS[p.orientation ?? ''] ?? '—' : null)} />
             <Row label="Qyteti" values={properties.map((p) => p?.city ?? null)} />
             <Row label="Lagjja" values={properties.map((p) => p?.neighborhood ?? null)} />
