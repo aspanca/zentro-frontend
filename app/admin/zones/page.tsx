@@ -31,6 +31,7 @@ export default function ZonesPage() {
   const [selectedId, setSelectedId] = useState<number | null>(null);
   const [drawing, setDrawing]       = useState(false);
   const [drawPoints, setDrawPoints] = useState<[number, number][]>([]);
+  const [cursorPoint, setCursorPoint] = useState<[number, number] | null>(null);
   const [form, setForm]             = useState({ ...BLANK_FORM });
   const [panelMode, setPanelMode]   = useState<'list' | 'new' | 'edit'>('list');
   const [saving, setSaving]         = useState(false);
@@ -60,6 +61,7 @@ export default function ZonesPage() {
   const cancelDraw = () => {
     setDrawing(false);
     setDrawPoints([]);
+    setCursorPoint(null);
     setPanelMode('list');
     setError('');
   };
@@ -95,6 +97,7 @@ export default function ZonesPage() {
       await load();
       setDrawing(false);
       setDrawPoints([]);
+      setCursorPoint(null);
       setPanelMode('list');
       setForm({ ...BLANK_FORM });
     } catch { setError('Gabim rrjeti.'); }
@@ -391,6 +394,8 @@ export default function ZonesPage() {
             drawing={drawing}
             drawPoints={drawPoints}
             onAddPoint={handleAddPoint}
+            onMovePoint={setCursorPoint}
+            cursorPoint={cursorPoint}
             onSelectZone={(z) => { setSelectedId(z.id); handleEdit(z); }}
             selectedId={selectedId}
           />
