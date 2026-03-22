@@ -1,8 +1,9 @@
 'use client';
 
+import { useRef } from 'react';
 import {
   MapContainer, TileLayer, Polygon, Polyline, CircleMarker,
-  Tooltip, Marker, useMapEvents, useMap,
+  Tooltip, Marker, useMapEvents,
 } from 'react-leaflet';
 import L from 'leaflet';
 import 'leaflet/dist/leaflet.css';
@@ -28,10 +29,9 @@ const TYPE_DEFAULTS: Record<ZoneType, { color: string; label: string; icon: stri
 
 function zoneColor(z: ZoneRow) { return z.color ?? TYPE_DEFAULTS[z.type].color; }
 
-// Numbered vertex icon for the drawing layer
 function vertexIcon(n: number, isFirst: boolean, canClose: boolean) {
-  const size  = isFirst && canClose ? 28 : 22;
-  const half  = size / 2;
+  const size = isFirst && canClose ? 28 : 22;
+  const half = size / 2;
   const pulse = isFirst && canClose
     ? `<div style="
         position:absolute;inset:-6px;border-radius:50%;
@@ -54,47 +54,130 @@ function vertexIcon(n: number, isFirst: boolean, canClose: boolean) {
         box-shadow:0 1px 6px rgba(0,0,0,.5);
         display:flex;align-items:center;justify-content:center;
         color:#fff;font-size:${isFirst && canClose ? 10 : 9}px;font-weight:700;
-        cursor:${isFirst && canClose ? 'pointer' : 'crosshair'};
       ">${n}</div>
     </div>`,
   });
 }
 
-// ─── Drawing layer — handles clicks, mouse move, renders in-progress polygon ──
+// ─── All drawing visuals + event handling in ONE component ────────────────────
+// This way the ref that prevents double-firing is shared by both
+// the CircleMarker click (close) and the useMapEvents click (add point).
 
-const CLOSE_PX = 24; // pixel radius to snap-close the polygon
-
-function DrawLayer({
-  active, points, onAddPoint, onMovePoint, onClose,
+function DrawingLayer({
+  active,
+  drawPoints,
+  cursorPoint,
+  onAddPoint,
+  onMovePoint,
+  onClose,
 }: {
   active: boolean;
-  points: [number, number][];
+  drawPoints: [number, number][];
+  cursorPoint: [number, number] | null;
   onAddPoint: (p: [number, number]) => void;
   onMovePoint: (p: [number, number] | null) => void;
   onClose: () => void;
 }) {
-  const map = useMap();
+  // When the first-point circle is clicked, both the circle click AND the
+  // underlying map click fire in the same synchronous JS turn.
+  // Setting this ref in the circle click ensures the map click handler
+  // sees it immediately and skips adding a duplicate point.
+  const skipNextMapClick = useRef(false);
 
   useMapEvents({
     click(e) {
       if (!active) return;
-      // Stop default map behaviour so double-click zoom doesn't interfere
-      L.DomEvent.stopPropagation(e.originalEvent);
-
-      // Close polygon when clicking near the first point (≥3 points placed)
-      if (points.length >= 3) {
-        const firstPx = map.latLngToContainerPoint(L.latLng(points[0][0], points[0][1]));
-        const clickPx = e.containerPoint;          // already a pixel point — no conversion needed
-        const dist = Math.hypot(firstPx.x - clickPx.x, firstPx.y - clickPx.y);
-        if (dist <= CLOSE_PX) { onClose(); return; }
+      if (skipNextMapClick.current) {
+        skipNextMapClick.current = false;
+        return;
       }
-
       onAddPoint([e.latlng.lat, e.latlng.lng]);
     },
     mousemove(e) { if (active) onMovePoint([e.latlng.lat, e.latlng.lng]); },
     mouseout()   { onMovePoint(null); },
   });
-  return null;
+
+  if (!active) return null;
+
+  const previewLine: [number, number][] =
+    drawPoints.length > 0 && cursorPoint
+      ? [...drawPoints, cursorPoint]
+      : drawPoints;
+
+  const closingLine: [number, number][] =
+    drawPoints.length >= 2 && cursorPoint
+      ? [cursorPoint, drawPoints[0]]
+      : [];
+
+  const canClose = drawPoints.length >= 3;
+
+  return (
+    <>
+      {/* Filled preview */}
+      {previewLine.length >= 3 && (
+        <Polygon
+          positions={previewLine}
+          pathOptions={{ color: '#6366f1', fillColor: '#6366f1', fillOpacity: 0.15, weight: 0, interactive: false }}
+        />
+      )}
+
+      {/* Main path */}
+      {previewLine.length >= 2 && (
+        <Polyline
+          positions={previewLine}
+          pathOptions={{ color: '#6366f1', weight: 2.5, dashArray: '6 4', interactive: false }}
+        />
+      )}
+
+      {/* Closing preview line */}
+      {closingLine.length === 2 && (
+        <Polyline
+          positions={closingLine}
+          pathOptions={{ color: '#6366f1', weight: 1.5, dashArray: '4 6', opacity: 0.5, interactive: false }}
+        />
+      )}
+
+      {/* Vertex markers — purely visual */}
+      {drawPoints.map((p, i) => (
+        <Marker
+          key={i}
+          position={p}
+          icon={vertexIcon(i + 1, i === 0, canClose)}
+          interactive={false}
+        />
+      ))}
+
+      {/* Invisible interactive hit-target on first point — closes the polygon */}
+      {canClose && (
+        <CircleMarker
+          center={drawPoints[0]}
+          radius={20}
+          pathOptions={{
+            color: 'transparent',
+            fillColor: 'transparent',
+            fillOpacity: 0.001, // must be > 0 for hit detection
+            weight: 0,
+          }}
+          eventHandlers={{
+            click(e) {
+              L.DomEvent.stop(e.originalEvent); // try to suppress map click at DOM level
+              skipNextMapClick.current = true;  // belt-and-suspenders: skip next map click too
+              onClose();
+            },
+          }}
+        />
+      )}
+
+      {/* Cursor dot */}
+      {cursorPoint && (
+        <CircleMarker
+          center={cursorPoint}
+          radius={5}
+          pathOptions={{ color: '#6366f1', fillColor: '#fff', fillOpacity: 1, weight: 2, interactive: false }}
+        />
+      )}
+    </>
+  );
 }
 
 // ─── Main map component ───────────────────────────────────────────────────────
@@ -116,18 +199,6 @@ export default function ZoneMap({
   cursorPoint, onSelectZone, selectedId,
 }: Props) {
   const KOSOVO_CENTER: [number, number] = [42.6629, 21.1655];
-
-  // Build the preview polyline: all drawn points + cursor
-  const previewLine: [number, number][] =
-    drawPoints.length > 0 && cursorPoint
-      ? [...drawPoints, cursorPoint]
-      : drawPoints;
-
-  // Closing line back to first point (preview of close)
-  const closingLine: [number, number][] =
-    drawPoints.length >= 2 && cursorPoint
-      ? [cursorPoint, drawPoints[0]]
-      : [];
 
   return (
     <div className="relative w-full h-full" style={{ cursor: drawing ? 'crosshair' : 'default' }}>
@@ -164,58 +235,11 @@ export default function ZoneMap({
           </Polygon>
         ))}
 
-        {/* ── In-progress drawing ── */}
-        {drawing && (
-          <>
-            {/* Filled preview polygon (semi-transparent) */}
-            {previewLine.length >= 3 && (
-              <Polygon
-                positions={previewLine}
-                pathOptions={{ color: '#6366f1', fillColor: '#6366f1', fillOpacity: 0.15, weight: 0, interactive: false }}
-              />
-            )}
-
-            {/* Main path connecting drawn points + cursor */}
-            {previewLine.length >= 2 && (
-              <Polyline
-                positions={previewLine}
-                pathOptions={{ color: '#6366f1', weight: 2.5, dashArray: '6 4', interactive: false }}
-              />
-            )}
-
-            {/* Closing dashed line back to first point */}
-            {closingLine.length === 2 && (
-              <Polyline
-                positions={closingLine}
-                pathOptions={{ color: '#6366f1', weight: 1.5, dashArray: '4 6', opacity: 0.5, interactive: false }}
-              />
-            )}
-
-            {/* Vertex markers — visual only, all clicks pass through to DrawLayer */}
-            {drawPoints.map((p, i) => (
-              <Marker
-                key={i}
-                position={p}
-                icon={vertexIcon(i + 1, i === 0, drawPoints.length >= 3)}
-                interactive={false}
-              />
-            ))}
-
-            {/* Cursor dot */}
-            {cursorPoint && (
-              <CircleMarker
-                center={cursorPoint}
-                radius={5}
-                pathOptions={{ color: '#6366f1', fillColor: '#fff', fillOpacity: 1, weight: 2, interactive: false }}
-              />
-            )}
-          </>
-        )}
-
-        {/* Event capture layer */}
-        <DrawLayer
+        {/* ── All drawing logic lives here ── */}
+        <DrawingLayer
           active={drawing}
-          points={drawPoints}
+          drawPoints={drawPoints}
+          cursorPoint={cursorPoint}
           onAddPoint={onAddPoint}
           onMovePoint={onMovePoint}
           onClose={onClose}
