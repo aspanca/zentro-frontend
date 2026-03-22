@@ -235,6 +235,14 @@ export default function ZoneMap({
           </Polygon>
         ))}
 
+        {/* ── Closed polygon preview (drawing finished, waiting for save) ── */}
+        {!drawing && drawPoints.length >= 3 && (
+          <Polygon
+            positions={drawPoints}
+            pathOptions={{ color: '#22c55e', fillColor: '#22c55e', fillOpacity: 0.2, weight: 3, interactive: false }}
+          />
+        )}
+
         {/* ── All drawing logic lives here ── */}
         <DrawingLayer
           active={drawing}
@@ -257,6 +265,12 @@ export default function ZoneMap({
             : drawPoints.length === 2
             ? '2 pikë — duhen të paktën 3'
             : `${drawPoints.length} pikë — kliko pikën e parë 🟢 për të mbyllur`}
+        </div>
+      )}
+      {!drawing && drawPoints.length >= 3 && (
+        <div className="absolute bottom-5 left-1/2 -translate-x-1/2 z-[1000] flex items-center gap-3 bg-gray-900/90 backdrop-blur text-white text-sm font-medium px-5 py-2.5 rounded-full shadow-xl pointer-events-none border border-emerald-500/40">
+          <span className="w-2.5 h-2.5 rounded-full bg-emerald-400 flex-shrink-0" />
+          ✓ Poligoni u mbyll — plotëso formën dhe kliko &ldquo;Ruaj&rdquo;
         </div>
       )}
     </div>

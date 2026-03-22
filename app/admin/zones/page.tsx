@@ -74,6 +74,11 @@ export default function ZonesPage() {
     setDrawPoints((prev) => prev.slice(0, -1));
   };
 
+  const handleClosePolygon = () => {
+    setDrawing(false);
+    setCursorPoint(null);
+  };
+
   const handleSave = async () => {
     if (!form.name.trim()) { setError('Emri është i detyrueshëm.'); return; }
     if (drawPoints.length < 3) { setError('Poligoni duhet të ketë të paktën 3 pika.'); return; }
@@ -395,7 +400,7 @@ export default function ZonesPage() {
             drawPoints={drawPoints}
             onAddPoint={handleAddPoint}
             onMovePoint={setCursorPoint}
-            onClose={handleSave}
+            onClose={handleClosePolygon}
             cursorPoint={cursorPoint}
             onSelectZone={(z) => { setSelectedId(z.id); handleEdit(z); }}
             selectedId={selectedId}
