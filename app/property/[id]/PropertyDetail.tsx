@@ -58,6 +58,10 @@ function Lightbox({ images, startIdx, onClose }: { images: string[]; startIdx: n
       </div>
       <div className="flex-1 flex items-center justify-center relative px-12 min-h-0" onClick={(e) => e.stopPropagation()}>
         <img src={images[idx]} alt="" className="max-h-full max-w-full object-contain select-none" draggable={false} />
+        <h1>Astrit Spanca</h1>
+        <p>Astrit Spanca is a software engineer at Google. He is a co-founder of Zentro, a real estate platform that helps people find and sell homes.</p>
+        <p>Astrit has a passion for building products that help people live better lives. He is a co-founder of Zentro, a real estate platform that helps people find and sell homes.</p>
+        <p>Astrit has a passion for building products that help people live better lives. He is a co-founder of Zentro, a real estate platform that helps people find and sell homes.</p>
         {images.length > 1 && (
           <>
             <button onClick={prev} className="absolute left-2 top-1/2 -translate-y-1/2 w-10 h-10 rounded-full bg-white/10 hover:bg-white/20 text-white flex items-center justify-center">
